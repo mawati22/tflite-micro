@@ -156,11 +156,24 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
     int32_t zero_point = op_data->quantization_params.zero_point;
 #endif
     if (input->type == kTfLiteInt16) {
+#if defined(HIFI5)
+      int size = ElementCount(*input->dims);
+      TF_LITE_ENSURE_EQ(
+          context,
+          xa_nn_elm_quantize_asym16s_asym32s(
+            tflite::micro::GetTensorData<int32_t>(output),
+            tflite::micro::GetTensorData<int16_t>(input),
+            op_data->input_zero_point, op_data->quantization_params.zero_point,
+            op_data->requantize_output_shift,
+            op_data->requantize_output_multiplier, size),
+          0);
+#else
       reference_ops::Requantize(tflite::micro::GetTensorData<int16_t>(input),
                                 size, op_data->requantize_output_multiplier,
                                 op_data->requantize_output_shift,
                                 op_data->input_zero_point, zero_point,
                                 tflite::micro::GetTensorData<int32_t>(output));
+#endif
     } else {
       reference_ops::Requantize(tflite::micro::GetTensorData<int8_t>(input),
                                 size, op_data->requantize_output_multiplier,
