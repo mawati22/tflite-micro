@@ -1,4 +1,4 @@
-/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -117,7 +117,7 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
   auto* op_data = static_cast<OpData*>(node->user_data);
 #elif defined(FUSION_F1) || defined(HIFI5)
   auto* op_data = static_cast<OpDataQuantizeReference*>(node->user_data);
-#endif // defined(HIFIMINI)
+#endif // defined(HIFIMINI) || defined(FUSION_F1) || defined(HIFI5)
 
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
@@ -142,7 +142,7 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
         0);
 #else
     static_assert(false, "Unsupported xtensa architecture.");
-#endif // defined(HIFIMINI)
+#endif // defined(HIFIMINI) || defined(FUSION_F1) || defined(HIFI5)
   } else if (output->type == kTfLiteInt32 &&
              (input->type == kTfLiteInt16 || input->type == kTfLiteInt8)) {
     int size = ElementCount(*input->dims);
@@ -154,7 +154,7 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
     int32_t zero_point = op_data->zero_point;
 #elif defined(FUSION_F1) || defined(HIFI5)
     int32_t zero_point = op_data->quantization_params.zero_point;
-#endif // defined(HIFIMINI)
+#endif // defined(HIFIMINI) || defined(FUSION_F1) || defined(HIFI5)
     if (input->type == kTfLiteInt16) {
 #if defined(HIFI5)
       int size = ElementCount(*input->dims);
