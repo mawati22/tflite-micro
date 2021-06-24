@@ -93,13 +93,13 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   // Do nothing for in-place reshape.
   if (input->data.raw != output->data.raw) {
     // Otherwise perform reshape with copy.
-#if ((defined(FUSION_F1)) || (defined(HIFI5)))
+#if defined(FUSION_F1) || defined(HIFI5)
     memcpy(output->data.raw, input->data.raw, input_bytes);
 #else
     for (size_t i = 0; i < input_bytes; ++i) {
       output->data.raw[i] = input->data.raw[i];
     }
-#endif
+#endif // defined(FUSION_F1) || defined(HIFI5)
   }
   return kTfLiteOk;
 }

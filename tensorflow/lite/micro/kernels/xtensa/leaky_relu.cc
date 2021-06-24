@@ -21,7 +21,6 @@ limitations under the License.
 #include "tensorflow/lite/kernels/internal/types.h"
 #include "tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
-#include "tensorflow/lite/micro/kernels/xtensa/fixedpoint_utils.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 
 namespace tflite {
@@ -151,7 +150,7 @@ TfLiteStatus LeakyReluEval(TfLiteContext* context, TfLiteNode* node) {
       QuantizeLeakyRelu<int8_t>(data, input, output);
       return kTfLiteOk;
     } break;
-#endif
+#endif // defined(HIFI5)
     default:
       TF_LITE_KERNEL_LOG(
           context, "Only float32, int8 are supported by LEAKY_RELU, got %s.",
