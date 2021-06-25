@@ -25,6 +25,14 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 
+/* Notes :
+ * [1] : These "#if defined(HIFI5)" are to protect against HIFI4 build.
+ *       The function signature of xa_nn_elm_[min,max]_4D_Bcast_8x8_8() is newer
+ *       in HIFI5 than HIFI4. And, the declaration of xa_nn_broadcast_8_8()
+ *       is missing in HIFI4.
+ *       After they are fixed, these protections are un-necessary and can be removed.
+ */
+
 namespace tflite {
 namespace ops {
 namespace micro {
@@ -68,6 +76,7 @@ struct MinimumOp {
 
 }  // namespace maximum_minimum
 
+#if defined(HIFI5)  // [1]
 namespace hifi {
 
 enum class basic_op {
@@ -121,6 +130,7 @@ int hifi::ExecElemKernel( hifi::basic_op elem_op, data_type *out_data,
 
   return err;
 }
+#endif // defined(HIFI5)
 
 template <typename data_type, typename op_type>
 void TFLiteOperation(TfLiteContext* context, TfLiteNode* node,
@@ -135,6 +145,7 @@ void TFLiteOperation(TfLiteContext* context, TfLiteNode* node,
       op_type::template op<data_type>);
 }
 
+#if defined(HIFI5)  // [1]
 /*
  * Invoke element-wise kernels if the shapes match, else,
  * call hifi::MaximumMinimumBroadcast(...)
@@ -160,11 +171,11 @@ TfLiteStatus hifi::TFLiteOperation(
     int maxDims = std::max( { unextended_input1_shape.DimensionsCount(),
                               unextended_input2_shape.DimensionsCount(),
                               unextended_output_shape.DimensionsCount()} );
-    
+
     /* Verify that number of dimensions is between 1 to 8 */
     TFLITE_DCHECK_GE(maxDims, 1);
     TFLITE_DCHECK_LE(maxDims, 8);
-    
+
     //decltype(&hifi::MaximumMinimumBroadcast<data_type, 4>) bCastMinMax = NULL;
 
     if (maxDims <= 4) {
@@ -261,16 +272,20 @@ int hifi::MaximumMinimumBroadcast( const RuntimeShape& unextended_input1_shape, 
   return err;
 }
 
+#endif // defined(HIFI5)
+
 template <KernelType kernel_type, typename OpType>
 TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   OpContext op_context(context, node);
 
   if (kernel_type == kReference || kernel_type == kHiFi5) {
 
+#if defined(HIFI5)  // [1]
     hifi::basic_op operation =
         std::is_same<OpType, MinimumOp>::value ? hifi::basic_op::min :
             std::is_same<OpType, MaximumOp>::value ? hifi::basic_op::max :
                 hifi::basic_op::no_op;
+#endif
 
     switch (op_context.output->type) {
       case kTfLiteFloat32:
@@ -280,11 +295,11 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
         TFLiteOperation<uint8_t, OpType>(context, node, op_context);
         break;
       case kTfLiteInt8:
-        if (kernel_type == kHiFi5) {
+#if defined(HIFI5)
           hifi::TFLiteOperation<int8_t>(context, node, op_context, operation);
-        } else {
+#else
           TFLiteOperation<int8_t, OpType>(context, node, op_context);
-        }
+#endif
         break;
       case kTfLiteInt32:
         TFLiteOperation<int32_t, OpType>(context, node, op_context);
