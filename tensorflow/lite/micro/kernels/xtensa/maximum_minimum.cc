@@ -1,4 +1,4 @@
-/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -296,9 +296,9 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
         break;
       case kTfLiteInt8:
 #if defined(HIFI5)
-          hifi::TFLiteOperation<int8_t>(context, node, op_context, operation);
+        hifi::TFLiteOperation<int8_t>(context, node, op_context, operation);
 #else
-          TFLiteOperation<int8_t, OpType>(context, node, op_context);
+        TFLiteOperation<int8_t, OpType>(context, node, op_context);
 #endif
         break;
       case kTfLiteInt32:
