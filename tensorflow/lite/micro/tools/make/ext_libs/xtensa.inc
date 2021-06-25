@@ -97,7 +97,10 @@ ifeq ($(TARGET_ARCH), $(findstring $(TARGET_ARCH), "hifi5"))
     $(NNLIB_PATH)/algo/ndsp/hifi5/src/sinf_tbl.c \
     $(NNLIB_PATH)/algo/ndsp/hifi5/src/lognf_tbl.c \
     $(NNLIB_PATH)/algo/ndsp/hifi5/src/sqrt2f_tbl.c \
-    $(NNLIB_PATH)/algo/ndsp/hifi5/src/nanf_tbl.c
+    $(NNLIB_PATH)/algo/ndsp/hifi5/src/nanf_tbl.c \
+    $(NNLIB_PATH)/algo/kernels/basic/hifi5/xa_nn_elm_ceil_f32.c \
+    $(NNLIB_PATH)/algo/kernels/basic/hifi5/xa_nn_elm_round_f32.c \
+    $(NNLIB_PATH)/algo/kernels/basic/hifi5/xa_nn_elm_neg_f32.c 
 
   INCLUDES += \
     -I$(NNLIB_PATH)/ \
