@@ -129,7 +129,18 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
                    tflite::micro::GetTensorData<int16_t>(input),
                    tflite::micro::GetTensorShape(output),
                    tflite::micro::GetTensorData<int8_t>(output));
-#elif defined(FUSION_F1) || defined(HIFI5)
+#elif defined(FUSION_F1)
+    int size = ElementCount(*input->dims);
+    TF_LITE_ENSURE_EQ(
+        context,
+        xa_nn_elm_quantize_asym16s_asym8s(
+            tflite::micro::GetTensorData<int8_t>(output),
+            tflite::micro::GetTensorData<int16_t>(input),
+            op_data->input_zero_point, op_data->quantization_params.zero_point,
+            op_data->requantize_output_shift,
+            op_data->requantize_output_multiplier, size),
+        0);
+#elif defined(HIFI5)
     int size = ElementCount(*input->dims);
     TF_LITE_ENSURE_EQ(
         context,
