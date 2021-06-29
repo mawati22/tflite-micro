@@ -530,7 +530,7 @@ void* Init(TfLiteContext* context, const char* buffer, size_t length) {
   return context->AllocatePersistentBuffer(context, sizeof(OpData));
 }
 
-#if defined(HIFI5)
+#if defined(FUSION_F1) || defined(HIFI5)
 // Using separate Prepare functions for Averagepool and maxpool
 // because of different calls to get_size functions.
 TfLiteStatus AveragePrepare(TfLiteContext* context, TfLiteNode* node) {
@@ -708,14 +708,14 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
 
   return kTfLiteOk;
 }
-#endif // defined(HIFI5)
+#endif // defined(FUSION_F1) || defined(HIFI5)
 
 }  // namespace pooling
 
 TfLiteRegistration Register_AVERAGE_POOL_2D() {
   return {/*init=*/pooling::Init,
           /*free=*/nullptr,
-#if defined(HIFI5)
+#if defined(FUSION_F1) || defined(HIFI5)
           /*prepare=*/pooling::AveragePrepare,
 #else
           /*prepare=*/pooling::Prepare,
@@ -730,7 +730,7 @@ TfLiteRegistration Register_AVERAGE_POOL_2D() {
 TfLiteRegistration Register_MAX_POOL_2D() {
   return {/*init=*/pooling::Init,
           /*free=*/nullptr,
-#if defined(HIFI5)
+#if defined(FUSION_F1) || defined(HIFI5)
           /*prepare=*/pooling::MaxPrepare,
 #else
           /*prepare=*/pooling::Prepare,
