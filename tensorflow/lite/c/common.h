@@ -803,6 +803,9 @@ typedef struct TfLiteContext {
   // WARNING: This method may not be available on all platforms.
   TfLiteEvalTensor* (*GetEvalTensor)(const struct TfLiteContext* context,
                                      int tensor_idx);
+
+  void *user_context;
+
 } TfLiteContext;
 
 typedef struct TfLiteRegistration {
