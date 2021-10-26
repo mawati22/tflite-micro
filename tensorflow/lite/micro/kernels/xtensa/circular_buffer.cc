@@ -155,7 +155,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   int depth = output->dims->data[2] * output->dims->data[3];
 
   if (input->type == kTfLiteInt8) {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
   	const int8_t* xa_input;
 	  int8_t* xa_output;
   	int err;
@@ -167,7 +167,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 #else
     EvalInt8(tflite::micro::GetTensorData<int8_t>(input), num_slots, depth,
              tflite::micro::GetTensorData<int8_t>(output));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
   } else {
     TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
                        TfLiteTypeGetName(input->type), input->type);

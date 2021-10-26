@@ -20,21 +20,31 @@
 #
 # Second argument is a regular expression that's required to be in the output
 # logs for the test to pass.
+#
+# Third argument is the TARGET name, here this is xtensa
+#
 
 declare -r TEST_TMPDIR=/tmp/test_xtensa_binary/
-declare -r MICRO_LOG_PATH=${TEST_TMPDIR}/$1
-declare -r MICRO_LOG_FILENAME=${MICRO_LOG_PATH}/logs.txt
+declare -r MICRO_LOG_PATH=`dirname ${TEST_TMPDIR}/$1`
+declare -r MICRO_LOG_FILENAME=${TEST_TMPDIR}/${1}_logs.txt
 mkdir -p ${MICRO_LOG_PATH}
 
-xt-run $1 2>&1 | tee ${MICRO_LOG_FILENAME}
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+xt-run --turbo $1 >${MICRO_LOG_FILENAME} 2>&1
 
 if [[ ${2} != "non_test_binary" ]]
 then
   if grep -q "$2" ${MICRO_LOG_FILENAME}
   then
+    #cat ${MICRO_LOG_FILENAME}
+    echo -e "$3, $1 : ${GREEN}PASS${NC}"
     exit 0
   else
+    #cat ${MICRO_LOG_FILENAME}
+    echo -e "$3, $1 : ${RED}FAIL${NC}. See log ${MICRO_LOG_FILENAME} for details."
     exit 1
   fi
 fi
-

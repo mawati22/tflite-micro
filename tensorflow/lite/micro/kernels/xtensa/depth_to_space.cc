@@ -112,7 +112,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                                   tflite::micro::GetTensorData<float>(output));
       break;
     case kTfLiteInt8:
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
       {
         const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
         const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
@@ -148,7 +148,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                                   tflite::micro::GetTensorData<int8_t>(input),
                                   tflite::micro::GetTensorShape(output),
                                   tflite::micro::GetTensorData<int8_t>(output));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
       break;
     default:
       TF_LITE_KERNEL_LOG(

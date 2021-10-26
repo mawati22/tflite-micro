@@ -107,7 +107,7 @@ TfLiteStatus HardSwishEval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<uint8_t>(output));
     } break;
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
     case kTfLiteInt8: {
       int err = 0;
       const int flat_size = MatchingFlatSize(tflite::micro::GetTensorShape(input), tflite::micro::GetTensorShape(output));
@@ -132,7 +132,7 @@ TfLiteStatus HardSwishEval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<int8_t>(output));
     } break;
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
     default: {
       TF_LITE_KERNEL_LOG(
           context,

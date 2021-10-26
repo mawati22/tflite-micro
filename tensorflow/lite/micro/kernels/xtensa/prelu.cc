@@ -134,7 +134,7 @@ TfLiteStatus PreluEval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorData<uint8_t>(output));
       return kTfLiteOk;
     } break;
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
     case kTfLiteInt8: {
       const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
       const RuntimeShape& alpha_shape = tflite::micro::GetTensorShape(alpha);
@@ -170,7 +170,7 @@ TfLiteStatus PreluEval(TfLiteContext* context, TfLiteNode* node) {
       }
       return kTfLiteOk;
     } break;
-#else // defined(HIFI5)
+#else // defined(HIFI5) || defined(FUSION_F1)
     case kTfLiteInt8: {
       reference_ops::BroadcastPrelu4DSlow(
           params, tflite::micro::GetTensorShape(input),

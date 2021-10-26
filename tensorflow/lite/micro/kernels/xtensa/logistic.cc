@@ -125,7 +125,7 @@ TfLiteStatus LogisticEval(TfLiteContext* context, TfLiteNode* node) {
   } else if (input->type == kTfLiteInt8) {
     switch (output->type) {
       case kTfLiteInt8: {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
         int err;
         const int8_t *input_data_ptr;
         int8_t *output_data_ptr;
@@ -151,7 +151,7 @@ TfLiteStatus LogisticEval(TfLiteContext* context, TfLiteNode* node) {
             NumElements(input->dims),
             tflite::micro::GetTensorData<int8_t>(input),
             tflite::micro::GetTensorData<int8_t>(output));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
         return kTfLiteOk;
       }
       default:

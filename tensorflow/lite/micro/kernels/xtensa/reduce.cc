@@ -44,7 +44,7 @@ struct OpData {
   int output_zp;
   float output_scale;
   int num_output_elements;
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
   int scratch_tensor_index;
 #endif
 };
@@ -99,7 +99,7 @@ TfLiteStatus PrepareMax(TfLiteContext* context, TfLiteNode* node) {
   context->RequestScratchBufferInArena(
       context, sizeof(int) * static_cast<int>(ElementCount(*axis->dims)),
       &op_data->resolved_axis_idx);
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
   if((input->dims->size <= 4) && (input->type == kTfLiteInt8))
   {
     reduce_ops_t reduce_type = REDUCE_MAX;
@@ -124,7 +124,7 @@ TfLiteStatus PrepareMax(TfLiteContext* context, TfLiteNode* node) {
         &(op_data->scratch_tensor_index));
     TF_LITE_ENSURE_OK(context, scratch_status);
   }
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
   return kTfLiteOk;
 }
 
@@ -148,7 +148,7 @@ TfLiteStatus PrepareMeanOrSum(TfLiteContext* context, TfLiteNode* node) {
     op_data->output_scale = output->params.scale;
   }
 
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
   if((input->dims->size <= 4) && (input->type == kTfLiteInt8))
   {
     reduce_ops_t reduce_type = REDUCE_MEAN;
@@ -173,7 +173,7 @@ TfLiteStatus PrepareMeanOrSum(TfLiteContext* context, TfLiteNode* node) {
         &(op_data->scratch_tensor_index));
     TF_LITE_ENSURE_OK(context, scratch_status);
   }
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
   TF_LITE_ENSURE_OK(context, PrepareSimple(context, node));
   // TODO(b/144955155): Support uint8_t(b/144955155) and int8_t(b/144955018)
   return kTfLiteOk;
@@ -233,7 +233,7 @@ TfLiteStatus EvalMean(TfLiteContext* context, TfLiteNode* node) {
       }
     } break;
     case kTfLiteInt8: {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
       int err;
       void* p_scratch;
       const int8_t *input_data_ptr; 
@@ -341,7 +341,7 @@ TfLiteStatus EvalMean(TfLiteContext* context, TfLiteNode* node) {
                 num_axis, params->keep_dims, temp_index, resolved_axis,
                 temp_buffer, false));
       }
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
     } break;
     case kTfLiteUInt8: {
       // Defer to specialized implementation for 4D Mean across axes 1 & 2.
@@ -422,7 +422,7 @@ TfLiteStatus EvalMax(TfLiteContext* context, TfLiteNode* node) {
       TF_LITE_ENSURE_EQ(context, static_cast<double>(op_data->input_scale),
                         static_cast<double>(op_data->output_scale));
       TF_LITE_ENSURE_EQ(context, op_data->input_zp, op_data->output_zp);
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
       int err;
       void* p_scratch;
       const int8_t *input_data_ptr;
@@ -482,7 +482,7 @@ TfLiteStatus EvalMax(TfLiteContext* context, TfLiteNode* node) {
               [](const int8_t current, const int8_t in) -> int8_t {
                 return (in > current) ? in : current;
               }));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
       break;
     default:
       TF_LITE_KERNEL_LOG(context,

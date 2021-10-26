@@ -183,7 +183,7 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorShape(output),
             tflite::micro::GetTensorData<int8_t>(output));
       } else {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
         int err;
         const RuntimeShape& input1_shape = tflite::micro::GetTensorShape(input1);
         const RuntimeShape& input2_shape = tflite::micro::GetTensorShape(input2);
