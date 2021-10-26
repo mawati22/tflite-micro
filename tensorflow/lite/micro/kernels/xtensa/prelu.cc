@@ -170,7 +170,7 @@ TfLiteStatus PreluEval(TfLiteContext* context, TfLiteNode* node) {
       }
       return kTfLiteOk;
     } break;
-#else // defined(HIFI5) || defined(FUSION_F1)
+#else
     case kTfLiteInt8: {
       reference_ops::BroadcastPrelu4DSlow(
           params, tflite::micro::GetTensorShape(input),
@@ -181,7 +181,7 @@ TfLiteStatus PreluEval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorData<int8_t>(output));
       return kTfLiteOk;
     } break;
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
     default:
       TF_LITE_KERNEL_LOG(
           context, "Only float32 and uint8_t are supported currently, got %d.",

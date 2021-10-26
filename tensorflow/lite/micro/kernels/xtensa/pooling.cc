@@ -129,7 +129,7 @@ TfLiteStatus AverageEvalFloat(TfLiteContext* context, const TfLiteNode* node,
   return kTfLiteOk;
 }
 
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
 TfLiteStatus AverageEvalQuantized(TfLiteContext* context,
                                   const TfLiteNode* node,
                                   const TfLitePoolParams* params,
@@ -265,7 +265,7 @@ void AverageEvalQuantized(TfLiteContext* context, const TfLiteNode* node,
         tflite::micro::GetTensorData<int8_t>(output));
   }
 }
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
 
 TfLiteStatus MaxEvalFloat(TfLiteContext* context, TfLiteNode* node,
                   TfLitePoolParams* params, const OpData* data,
@@ -336,7 +336,7 @@ TfLiteStatus MaxEvalFloat(TfLiteContext* context, TfLiteNode* node,
   return kTfLiteOk;
 }
 
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
 TfLiteStatus MaxEvalQuantized(TfLiteContext* context, TfLiteNode* node,
                               TfLitePoolParams* params, const OpData* data,
                               const TfLiteEvalTensor* input,
@@ -465,7 +465,7 @@ void MaxEvalQuantized(TfLiteContext* context, TfLiteNode* node,
         tflite::micro::GetTensorData<int8_t>(output));
   }
 }
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
 }  // namespace
 
 TfLiteStatus AverageEval(TfLiteContext* context, TfLiteNode* node) {
