@@ -1,4 +1,4 @@
-/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ namespace micro {
 namespace elementwise {
 namespace hifi {
 
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
 inline TfLiteStatus EvalLogicalNot(TfLiteContext* context, TfLiteNode* node) {
     const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
     TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
@@ -47,7 +47,7 @@ inline TfLiteStatus EvalLogicalNot(TfLiteContext* context, TfLiteNode* node) {
     TF_LITE_ENSURE(context, err==0);
     return kTfLiteOk;
   }
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
 
 } //namespae hifi
 
@@ -94,22 +94,22 @@ inline TfLiteStatus EvalImpl(TfLiteContext* context, TfLiteNode* node,
   return kTfLiteOk;
 }
 
-#if !defined(HIFI5)
+#if !(defined(HIFI5) || defined(FUSION_F1))
 inline TfLiteStatus EvalNumeric(TfLiteContext* context, TfLiteNode* node,
                                 float float_func(float)) {
   return EvalImpl<float>(context, node, float_func, kTfLiteFloat32);
 }
-#endif // !defined(HIFI5)
+#endif // !(defined(HIFI5) || defined(FUSION_F1))
 
-#if !defined(HIFI5)
+#if !(defined(HIFI5) || defined(FUSION_F1))
 inline TfLiteStatus EvalLogical(TfLiteContext* context, TfLiteNode* node,
                                 bool bool_func(bool)) {
   return EvalImpl<bool>(context, node, bool_func, kTfLiteBool);
 }
-#endif // !defined(HIFI5)
+#endif // !(defined(HIFI5) || defined(FUSION_F1))
 
 TfLiteStatus AbsEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && defined(HIFI5)
+#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -127,11 +127,11 @@ TfLiteStatus AbsEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::abs);
-#endif // HIFI_VFPU && defined(HIFI5)
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
 }
 
 TfLiteStatus SinEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && defined(HIFI5)
+#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -149,11 +149,11 @@ TfLiteStatus SinEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::sin);
-#endif // HIFI_VFPU && defined(HIFI5)
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
 }
 
 TfLiteStatus CosEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && defined(HIFI5)
+#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -171,11 +171,11 @@ TfLiteStatus CosEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::cos);
-#endif // HIFI_VFPU && defined(HIFI5)
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
 }
 
 TfLiteStatus LogEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && defined(HIFI5)
+#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -193,11 +193,11 @@ TfLiteStatus LogEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::log);
-#endif // HIFI_VFPU && defined(HIFI5)
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
 }
 
 TfLiteStatus SqrtEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && defined(HIFI5)
+#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -215,11 +215,11 @@ TfLiteStatus SqrtEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::sqrt);
-#endif // HIFI_VFPU && defined(HIFI5)
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
 }
 
 TfLiteStatus RsqrtEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && defined(HIFI5)
+#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -237,11 +237,11 @@ TfLiteStatus RsqrtEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, [](float f) { return 1.f / std::sqrt(f); });
-#endif // HIFI_VFPU && defined(HIFI5)
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
 }
 
 TfLiteStatus SquareEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && defined(HIFI5)
+#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -259,15 +259,15 @@ TfLiteStatus SquareEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, [](float f) { return f * f; });
-#endif // HIFI_VFPU && defined(HIFI5)
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
 }
 
 TfLiteStatus LogicalNotEval(TfLiteContext* context, TfLiteNode* node) {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
   return hifi::EvalLogicalNot(context, node);
 #else
   return EvalLogical(context, node, [](bool v) { return !v; });
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
 }
 
 }  // namespace

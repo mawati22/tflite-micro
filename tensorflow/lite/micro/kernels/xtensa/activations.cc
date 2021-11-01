@@ -187,7 +187,7 @@ TfLiteStatus ReluEval(TfLiteContext* context, TfLiteNode* node) {
       return kTfLiteOk;
     }
     case kTfLiteInt8: {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
       int err;
       const int8_t* inp_data_ptr;
       int8_t* out_data_ptr;
@@ -208,7 +208,7 @@ TfLiteStatus ReluEval(TfLiteContext* context, TfLiteNode* node) {
                             tflite::micro::GetTensorShape(output),
                             tflite::micro::GetTensorData<int8_t>(input),
                             tflite::micro::GetTensorData<int8_t>(output));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
       return kTfLiteOk;
     }
     case kTfLiteUInt8: {
@@ -303,7 +303,7 @@ TfLiteStatus Relu6Eval(TfLiteContext* context, TfLiteNode* node) {
       return kTfLiteOk;
     }
     case kTfLiteInt8: {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
       int err;
       const int8_t* inp_data_ptr;
       int8_t* out_data_ptr;
@@ -323,7 +323,7 @@ TfLiteStatus Relu6Eval(TfLiteContext* context, TfLiteNode* node) {
                              tflite::micro::GetTensorData<int8_t>(input),
                              tflite::micro::GetTensorShape(output),
                              tflite::micro::GetTensorData<int8_t>(output));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
       return kTfLiteOk;
     }
     case kTfLiteUInt8: {

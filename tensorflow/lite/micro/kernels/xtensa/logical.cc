@@ -43,7 +43,7 @@ TfLiteStatus LogicalImpl(TfLiteContext* context, TfLiteNode* node,
       tflite::micro::GetEvalOutput(context, node, kOutputTensor);
 
   if (tflite::micro::HaveSameShapes(input1, input2)) {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
     int err;
     const int8_t *input1_data_ptr, *input2_data_ptr;
     int8_t *output_data_ptr;
@@ -82,7 +82,7 @@ TfLiteStatus LogicalImpl(TfLiteContext* context, TfLiteNode* node,
         tflite::micro::GetTensorData<bool>(input2),
         tflite::micro::GetTensorShape(output),
         tflite::micro::GetTensorData<bool>(output), func);
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
   } else {
     reference_ops::BroadcastBinaryFunction4DSlow<bool, bool, bool>(
         tflite::micro::GetTensorShape(input1),

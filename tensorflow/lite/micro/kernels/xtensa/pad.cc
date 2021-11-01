@@ -192,7 +192,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       } else {
         pad_value = *tflite::micro::GetTensorData<int8_t>(constant_values);
       }
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
       if((input->dims->size <= 4))
       {
         int err;
@@ -245,7 +245,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                            &pad_value, tflite::micro::GetTensorShape(output),
                            tflite::micro::GetTensorData<int8_t>(output));
       }
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
     } break;
     case kTfLiteInt32: {
       int32_t pad_value =

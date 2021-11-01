@@ -104,7 +104,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   switch (value->type) {
     case kTfLiteFloat32:
 	{
-#if HIFI_VFPU && defined(HIFI5)
+#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
 	float  memsetValue = *(float *)micro::GetTensorData<float>(value);
 	int  numElem = micro::GetTensorShape(output).FlatSize();
 	float *dst = micro::GetTensorData<float>(output);
@@ -113,7 +113,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 	TF_LITE_ENSURE(context, (err==0) );
 #else
 	FillImpl<float>(value, output);
-#endif // defined(HIFI5)
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
 	break;
 	}
     default:

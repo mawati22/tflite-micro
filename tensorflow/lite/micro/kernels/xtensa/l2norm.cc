@@ -124,7 +124,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
         MatchingDim(input_shape, trailing_dim, output_shape, trailing_dim);
     const int outer_size =
         MatchingFlatSizeSkipDim(input_shape, trailing_dim, output_shape);
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
     int err, itr = 0;
     const int8_t *input_data_ptr;
     int8_t *output_data_ptr;
@@ -144,7 +144,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
         data.input_zero_point, outer_size, depth,
         tflite::micro::GetTensorData<int8_t>(input),
         tflite::micro::GetTensorData<int8_t>(output));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
   } else {
     TF_LITE_KERNEL_LOG(context, "Output type is %s, requires float.",
                        TfLiteTypeGetName(output->type));

@@ -36,7 +36,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   switch (input->type) {
     // TODO(wangtz): handle for kTfLiteInt8
     case kTfLiteFloat32: {
-#if HIFI_VFPU && defined(HIFI5)
+#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
       const int flat_size = MatchingFlatSize(tflite::micro::GetTensorShape(input), tflite::micro::GetTensorShape(output));
       const float* in_data = tflite::micro::GetTensorData<float>(input);
       float* out_data = tflite::micro::GetTensorData<float>(output);
@@ -52,7 +52,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                             tflite::micro::GetTensorData<float>(input),
                             tflite::micro::GetTensorShape(output),
                             tflite::micro::GetTensorData<float>(output));
-#endif // HIFI_VFPU && defined(HIFI5)
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
     }break;
     default:
       TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",

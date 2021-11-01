@@ -92,13 +92,13 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
 
 template <typename T>
 void memCopyN(T* out, const T* in, const int num_elements) {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
   memcpy(out, in, num_elements * sizeof(T));
 #else
   for (int i = 0; i < num_elements; ++i) {
     out[i] = in[i];
   }
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
 }
 
 TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {

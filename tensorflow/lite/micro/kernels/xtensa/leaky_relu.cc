@@ -124,7 +124,7 @@ TfLiteStatus LeakyReluEval(TfLiteContext* context, TfLiteNode* node) {
                                tflite::micro::GetTensorData<float>(output));
       return kTfLiteOk;
     } break;
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
     case kTfLiteInt8: {
       int err;
       const signed char *input_data_ptr;
@@ -150,7 +150,7 @@ TfLiteStatus LeakyReluEval(TfLiteContext* context, TfLiteNode* node) {
       QuantizeLeakyRelu<int8_t>(data, input, output);
       return kTfLiteOk;
     } break;
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
     default:
       TF_LITE_KERNEL_LOG(
           context, "Only float32, int8 are supported by LEAKY_RELU, got %s.",

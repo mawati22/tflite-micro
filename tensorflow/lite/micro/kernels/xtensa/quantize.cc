@@ -107,7 +107,6 @@ void AffineQuantize(int scale_multiplier, const int32_t zero_point,
     }
   }
 }
-
 #endif  // defined(HIFIMINI)
 
 #if defined(HIFIMINI) || defined(FUSION_F1) || defined(HIFI5)
@@ -115,9 +114,9 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
   TFLITE_DCHECK(node->user_data != nullptr);
 #if defined(HIFIMINI)
   auto* op_data = static_cast<OpData*>(node->user_data);
-#elif defined(FUSION_F1) || defined(HIFI5)
+#else
   auto* op_data = static_cast<OpDataQuantizeReference*>(node->user_data);
-#endif // defined(HIFIMINI) || defined(FUSION_F1) || defined(HIFI5)
+#endif // defined(HIFIMINI)
 
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
@@ -129,18 +128,7 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
                    tflite::micro::GetTensorData<int16_t>(input),
                    tflite::micro::GetTensorShape(output),
                    tflite::micro::GetTensorData<int8_t>(output));
-#elif defined(FUSION_F1)
-    int size = ElementCount(*input->dims);
-    TF_LITE_ENSURE_EQ(
-        context,
-        xa_nn_elm_quantize_asym16s_asym8s(
-            tflite::micro::GetTensorData<int8_t>(output),
-            tflite::micro::GetTensorData<int16_t>(input),
-            op_data->input_zero_point, op_data->quantization_params.zero_point,
-            op_data->requantize_output_shift,
-            op_data->requantize_output_multiplier, size),
-        0);
-#elif defined(HIFI5)
+#else
     int size = ElementCount(*input->dims);
     TF_LITE_ENSURE_EQ(
         context,
@@ -151,9 +139,7 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
             op_data->requantize_output_shift,
             op_data->requantize_output_multiplier, size),
         0);
-#else
-    static_assert(false, "Unsupported xtensa architecture.");
-#endif // defined(HIFIMINI) || defined(FUSION_F1) || defined(HIFI5)
+#endif
   } else if (output->type == kTfLiteInt32 &&
              (input->type == kTfLiteInt16 || input->type == kTfLiteInt8)) {
     int size = ElementCount(*input->dims);
@@ -163,11 +149,12 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
     // same structs as much as possible and reduce the need for such ifdefs.
 #if defined(HIFIMINI)
     int32_t zero_point = op_data->zero_point;
-#elif defined(FUSION_F1) || defined(HIFI5)
+#else
     int32_t zero_point = op_data->quantization_params.zero_point;
-#endif // defined(HIFIMINI) || defined(FUSION_F1) || defined(HIFI5)
+#endif
+
     if (input->type == kTfLiteInt16) {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
       int size = ElementCount(*input->dims);
       TF_LITE_ENSURE_EQ(
           context,
@@ -184,9 +171,9 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
                                 op_data->requantize_output_shift,
                                 op_data->input_zero_point, zero_point,
                                 tflite::micro::GetTensorData<int32_t>(output));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
     } else {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
         const int8_t *input_data_ptr;
         int32_t *output_data_ptr;
         input_data_ptr  = tflite::micro::GetTensorData<int8_t>(input);
@@ -208,7 +195,7 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
                                 op_data->requantize_output_shift,
                                 op_data->input_zero_point, zero_point,
                                 tflite::micro::GetTensorData<int32_t>(output));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
     }
   } else {
     TF_LITE_KERNEL_LOG(context, "Input %s, output %s not supported.",
@@ -225,9 +212,8 @@ void* Init(TfLiteContext* context, const char* buffer, size_t length) {
 #if defined(HIFIMINI)
   return context->AllocatePersistentBuffer(context, sizeof(OpData));
 #else
-  return context->AllocatePersistentBuffer(context,
-                                           sizeof(OpDataQuantizeReference));
-#endif // defined(HIFIMINI)
+  return context->AllocatePersistentBuffer(context, sizeof(OpDataQuantizeReference));
+#endif
 }
 
 TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
@@ -264,7 +250,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   return EvalXtensa(context, node);
 #else
   return EvalQuantizeReference(context, node);
-#endif // defined(HIFIMINI) || defined(FUSION_F1) || defined(HIFI5)
+#endif
 }
 
 }  // namespace

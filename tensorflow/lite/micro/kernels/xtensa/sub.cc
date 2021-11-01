@@ -179,7 +179,7 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorShape(output),
             tflite::micro::GetTensorData<int8_t>(output));
       } else {
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(FUSION_F1)
         int err;
         const RuntimeShape& input1_shape = tflite::micro::GetTensorShape(input1);
         const RuntimeShape& input2_shape = tflite::micro::GetTensorShape(input2);
@@ -212,7 +212,7 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorData<int8_t>(input2),
             tflite::micro::GetTensorShape(output),
             tflite::micro::GetTensorData<int8_t>(output));
-#endif // defined(HIFI5)
+#endif // defined(HIFI5) || defined(FUSION_F1)
       }
     } else {
       if (need_broadcast) {
