@@ -202,7 +202,6 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
             op_params.input2_multiplier, op_params.left_shift, flat_size);
 
         TF_LITE_ENSURE(context, err == 0);
-
 #else
         reference_integer_ops::Add(
             op_params, tflite::micro::GetTensorShape(input1),
@@ -211,7 +210,7 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorData<int8_t>(input2),
             tflite::micro::GetTensorShape(output),
             tflite::micro::GetTensorData<int8_t>(output));
-#endif
+#endif // defined(HIFI5) || defined(FUSION_F1)
       }
     } else {
       if (need_broadcast) {
@@ -249,7 +248,7 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
                            tflite::micro::GetTensorData<uint8_t>(input2),
                            tflite::micro::GetTensorShape(output),
                            tflite::micro::GetTensorData<uint8_t>(output));
-#endif
+#endif // defined(HIFI5)
       }
     }
   }
