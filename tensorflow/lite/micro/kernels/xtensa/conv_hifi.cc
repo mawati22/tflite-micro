@@ -65,7 +65,7 @@ TfLiteStatus ConvPrepareHifi(TfLiteContext* context, TfLiteNode* node) {
     required_scratch = xa_nn_dilated_conv2d_std_getsize(
         input_height, input_depth, filter_height, filter_width, stride_height,
         pad_height, output_height, PREC_ASYM8S, params->dilation_height_factor);
-#else
+#else // defined(FUSION_F1)
     required_scratch = xa_nn_dilated_conv2d_std_getsize(
         input_height, input_depth, filter_height, filter_width, stride_height,
         pad_height, output_height, output_channels, PREC_ASYM8S, params->dilation_height_factor);
