@@ -510,7 +510,7 @@ ifneq (,$(findstring _test,$(1)))
   MICROLITE_BUILD_TARGETS += $$($(1)_BINARY)
 
 test_$(1): $$($(1)_BINARY)
-	@$$(TEST_SCRIPT) $$($(1)_BINARY) $$(TEST_PASS_STRING) $$(TARGET)
+	$$(TEST_SCRIPT) $$($(1)_BINARY) $$(TEST_PASS_STRING) $$(TARGET)
 
 else
   ifeq ($(findstring exclude,$(4)),)
