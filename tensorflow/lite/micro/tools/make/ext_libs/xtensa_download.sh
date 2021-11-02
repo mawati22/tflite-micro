@@ -34,6 +34,12 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR=${SCRIPT_DIR}/../../../../../..
+cd "${ROOT_DIR}"
+
+source tensorflow/lite/micro/tools/make/bash_helpers.sh
+
 DOWNLOADS_DIR=${1}
 if [ ! -d ${DOWNLOADS_DIR} ]; then
   echo "The top-level downloads directory: ${DOWNLOADS_DIR} does not exist."
@@ -58,9 +64,10 @@ LIBRARY_INSTALL_PATH=${DOWNLOADS_DIR}/${LIBRARY_DIRNAME}
 if [ -d ${LIBRARY_INSTALL_PATH} ]; then
   echo >&2 "${LIBRARY_INSTALL_PATH} already exists, skipping the download."
 else
-  TMP_ZIP_ARCHIVE_NAME="${LIBRARY_DIRNAME}.zip"
-  wget ${LIBRARY_URL} -O /tmp/${TMP_ZIP_ARCHIVE_NAME} >&2
-  MD5=`md5sum /tmp/${TMP_ZIP_ARCHIVE_NAME} | awk '{print $1}'`
+  TEMPDIR="$(mktemp -d)"
+  TEMPFILE="${TEMPDIR}/${LIBRARY_DIRNAME}.zip"
+  wget ${LIBRARY_URL} -O "$TEMPFILE" >&2
+  MD5=`md5sum "$TEMPFILE" | awk '{print $1}'`
 
   if [[ ${MD5} != ${LIBRARY_MD5} ]]
   then
@@ -68,8 +75,9 @@ else
     exit 1
   fi
 
-  unzip -qo /tmp/${TMP_ZIP_ARCHIVE_NAME} -d ${DOWNLOADS_DIR} >&2
+  unzip -qo "$TEMPFILE" -d ${DOWNLOADS_DIR} >&2
 
+  rm -rf "${TEMPDIR}"
 fi
 
 echo "SUCCESS"
