@@ -94,12 +94,12 @@ inline TfLiteStatus EvalImpl(TfLiteContext* context, TfLiteNode* node,
   return kTfLiteOk;
 }
 
-#if !(defined(HIFI5) || defined(FUSION_F1))
+#if (!HIFI_VFPU) || (!(defined(HIFI5) || defined(FUSION_F1)))
 inline TfLiteStatus EvalNumeric(TfLiteContext* context, TfLiteNode* node,
                                 float float_func(float)) {
   return EvalImpl<float>(context, node, float_func, kTfLiteFloat32);
 }
-#endif // !(defined(HIFI5) || defined(FUSION_F1))
+#endif // (!HIFI_VFPU) || (!(defined(HIFI5) || defined(FUSION_F1)))
 
 #if !(defined(HIFI5) || defined(FUSION_F1))
 inline TfLiteStatus EvalLogical(TfLiteContext* context, TfLiteNode* node,

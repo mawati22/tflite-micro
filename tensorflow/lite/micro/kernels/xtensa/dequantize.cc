@@ -93,7 +93,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                                   tflite::micro::GetTensorData<float>(output));
         break;
       case kTfLiteInt8: {
-#if defined(HIFI5) || defined(FUSION_F1)
+#if HAVE_VFPU && (defined(HIFI5) || defined(FUSION_F1))
         int err;
         const int8_t *input_data_ptr;
         float *output_data_ptr;
@@ -113,7 +113,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                                   tflite::micro::GetTensorData<int8_t>(input),
                                   tflite::micro::GetTensorShape(output),
                                   tflite::micro::GetTensorData<float>(output));
-#endif // defined(HIFI5) || defined(FUSION_F1)
+#endif // HAVE_VFPU && (defined(HIFI5) || defined(FUSION_F1))
         break;}
       case kTfLiteInt16:
         reference_ops::Dequantize(data->quantization_params,
