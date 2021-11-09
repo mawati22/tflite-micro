@@ -47,9 +47,9 @@ if [ ! -d ${DOWNLOADS_DIR} ]; then
 fi
 
 if [[ ${2} == "hifi4" ]]; then
-  LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi4/raw/master/archive/xa_nnlib_hifi4_11_03_2021.zip"
+  LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi4/raw/master/archive/xa_nnlib_hifi4_11_09_2021.zip"
   LIBRARY_DIRNAME="xa_nnlib_hifi4"
-  LIBRARY_MD5="76a0f2707d9067997b15425aa2950572"
+  LIBRARY_MD5="fd6445b3d281220e2f584e2adc10165d"
 elif [[ ${2} == "hifi5" ]]; then
   LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi5/raw/master/archive/xa_nnlib_hifi5_06_30.zip"
   LIBRARY_DIRNAME="xa_nnlib_hifi5"
