@@ -74,7 +74,7 @@ TfLiteStatus LogisticEval(TfLiteContext* context, TfLiteNode* node) {
       break;
     }
     case kTfLiteInt8: {
-#if defined(HIFI5)
+#if defined(HIFI4) || defined(HIFI5)
       const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
       const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
       const int flat_size = MatchingFlatSize(input_shape, output_shape);
@@ -96,7 +96,7 @@ TfLiteStatus LogisticEval(TfLiteContext* context, TfLiteNode* node) {
           data->input_multiplier, data->input_left_shift,
           NumElements(input->dims), tflite::micro::GetTensorData<int8_t>(input),
           tflite::micro::GetTensorData<int8_t>(output));
-#endif  // defined(HIFI5)
+#endif // defined(HIFI4) || defined(HIFI5)
       break;
     }
     case kTfLiteInt16: {

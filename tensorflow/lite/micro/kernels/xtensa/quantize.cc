@@ -117,10 +117,8 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
                               op_data->input_zero_point, zero_point,
                               tflite::micro::GetTensorData<int16_t>(output));
   } else {
-    TF_LITE_KERNEL_LOG(context, "Input %s, output %s not supported.",
-                       TfLiteTypeGetName(input->type),
-                       TfLiteTypeGetName(output->type));
-    return kTfLiteError;
+    /* reference call for missing variants */
+    return EvalQuantizeReference(context, node);
   }
   return kTfLiteOk;
 }

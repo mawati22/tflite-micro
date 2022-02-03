@@ -71,10 +71,33 @@ TfLiteStatus LeakyReluEval(TfLiteContext* context, TfLiteNode* node) {
                                tflite::micro::GetTensorData<float>(output));
       return kTfLiteOk;
     } break;
+#if defined(HIFI4) || defined(HIFI5)
+    case kTfLiteInt8: {
+      int err;
+      const signed char *input_data_ptr;
+      signed char *output_data_ptr;
+      const int flat_size = MatchingFlatSize(tflite::micro::GetTensorShape(input), tflite::micro::GetTensorShape(output));
+      input_data_ptr  = tflite::micro::GetTensorData<int8_t>(input);
+      output_data_ptr = tflite::micro::GetTensorData<int8_t>(output);
+
+      err = xa_nn_vec_leaky_relu_asym8s_asym8s(output_data_ptr,
+                                          input_data_ptr,
+                                          data.input_zero_point,
+                                          data.output_multiplier_alpha,
+                                          data.output_shift_alpha,
+                                          data.output_multiplier_identity,
+                                          data.output_shift_identity,
+                                          data.output_zero_point,
+                                          flat_size);
+      TF_LITE_ENSURE(context, err == 0);
+      return kTfLiteOk;
+    } break;
+#else
     case kTfLiteInt8: {
       QuantizeLeakyRelu<int8_t>(data, input, output);
       return kTfLiteOk;
     } break;
+#endif // defined(HIFI4) || defined(HIFI5)
     case kTfLiteInt16: {
 #if defined(HIFI4_INTERNAL)
       const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
