@@ -24,6 +24,6 @@ ifeq ($(OPTIMIZED_KERNEL_DIR), xtensa)
 
    # TODO(#802): Disbaling test that takes a long time to run.
    ## Tests loading and running a speech model.
-   #$(eval $(call microlite_test,micro_speech_lstm_test,\
-   #$(MICRO_SPEECH_LSTM_TEST_SRCS),$(MICRO_SPEECH_LSTM_HDRS),$(MICRO_SPEECH_LSTM_GENERATOR_INPUTS)))
+   $(eval $(call microlite_test,micro_speech_lstm_test,\
+   $(MICRO_SPEECH_LSTM_TEST_SRCS),$(MICRO_SPEECH_LSTM_HDRS),$(MICRO_SPEECH_LSTM_GENERATOR_INPUTS)))
 endif
