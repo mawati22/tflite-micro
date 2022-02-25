@@ -26,7 +26,7 @@ namespace tflite {
 
 namespace {
 
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(HIFI4)
 
 struct OpData {
   OpDataPooling reference_op_data;
@@ -207,14 +207,14 @@ TfLiteStatus MaxEvalQuantizedHifi(TfLiteContext* context, TfLiteNode* node,
   return kTfLiteOk;
 }
 
-#endif  // defined(HIFI5)
+#endif  // defined(HIFI5) || defined(HIFI4)
 
 TfLiteStatus AverageEval(TfLiteContext* context, TfLiteNode* node) {
   TFLITE_DCHECK(node->builtin_data != nullptr);
   auto* params = reinterpret_cast<TfLitePoolParams*>(node->builtin_data);
 
   TFLITE_DCHECK(node->user_data != nullptr);
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(HIFI4)
   const OpData* op_data = static_cast<const OpData*>(node->user_data);
   const OpDataPooling* reference_op_data = &(op_data->reference_op_data);
 #else
@@ -234,7 +234,7 @@ TfLiteStatus AverageEval(TfLiteContext* context, TfLiteNode* node) {
                               output);
       break;
     case kTfLiteInt8:
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(HIFI4)
       AverageEvalQuantizedHifi(context, node, params, op_data, input, output);
 #else
       AveragePoolingEvalQuantized(context, node, params, reference_op_data,
@@ -254,7 +254,7 @@ TfLiteStatus MaxEval(TfLiteContext* context, TfLiteNode* node) {
   auto* params = reinterpret_cast<TfLitePoolParams*>(node->builtin_data);
 
   TFLITE_DCHECK(node->user_data != nullptr);
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(HIFI4)
   const OpData* op_data = static_cast<const OpData*>(node->user_data);
   const OpDataPooling* reference_op_data = &(op_data->reference_op_data);
 #else
@@ -273,7 +273,7 @@ TfLiteStatus MaxEval(TfLiteContext* context, TfLiteNode* node) {
                           output);
       break;
     case kTfLiteInt8:
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(HIFI4)
       MaxEvalQuantizedHifi(context, node, params, op_data, input, output);
 #else
       MaxPoolingEvalQuantized(context, node, params, reference_op_data, input,
@@ -290,7 +290,7 @@ TfLiteStatus MaxEval(TfLiteContext* context, TfLiteNode* node) {
 
 void* Init(TfLiteContext* context, const char* buffer, size_t length) {
   TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(HIFI4)
   return context->AllocatePersistentBuffer(context, sizeof(OpData));
 #else
   return context->AllocatePersistentBuffer(context, sizeof(OpDataPooling));
@@ -303,7 +303,7 @@ TfLiteRegistration Register_AVERAGE_POOL_2D() {
   return { /*init=*/
     Init,
         /*free=*/nullptr,
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(HIFI4)
         /*prepare=*/AveragePrepareHifi,
 #else
         /*prepare=*/PoolingPrepare,
@@ -320,7 +320,7 @@ TfLiteRegistration Register_MAX_POOL_2D() {
   return { /*init=*/
     Init,
         /*free=*/nullptr,
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(HIFI4)
         /*prepare=*/MaxPrepareHifi,
 #else
         /*prepare=*/PoolingPrepare,
