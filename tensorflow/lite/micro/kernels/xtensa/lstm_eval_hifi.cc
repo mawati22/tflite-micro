@@ -16,6 +16,48 @@ limitations under the License.
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/micro/kernels/xtensa/lstm_eval.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
+#if defined(HIFI5)
+#include <xtensa/tie/xt_hifi2.h>
+#endif
+
+#if TFLITE_SINGLE_ROUNDING
+#define MPY_BY_QUANT_MULT_X2_OUT32(out, inp, multiplier, left_shift, right_shift) \
+{ \
+  ae_int64 out64_0, out64_1; \
+  AE_MUL32X2S_HH_LL(out64_0, out64_1, inp, AE_MOVDA32(multiplier)); \
+  out64_0 = AE_SLAA64S(out64_0, 1 + left_shift); \
+  out64_1 = AE_SLAA64S(out64_1, 1 + left_shift); \
+  out = AE_ROUND32X2F64SASYM(out64_0, out64_1); \
+}
+
+#define MPY_BY_QUANT_MULT_X2X2_OUT32(out1, out2, inp1, inp2, multiplier, left_shift, right_shift) \
+{ \
+  ae_int64 out64_0, out64_1, out64_2, out64_3; \
+  AE_MUL32X2S_HH_LL(out64_0, out64_1, inp1, AE_MOVDA32(multiplier)); \
+  AE_MUL32X2S_HH_LL(out64_2, out64_3, inp2, AE_MOVDA32(multiplier)); \
+  out64_0 = AE_SLAA64S(out64_0, 1 + left_shift); \
+  out64_1 = AE_SLAA64S(out64_1, 1 + left_shift); \
+  out64_2 = AE_SLAA64S(out64_2, 1 + left_shift); \
+  out64_3 = AE_SLAA64S(out64_3, 1 + left_shift); \
+  out1 = AE_ROUND32X2F64SASYM(out64_0, out64_1); \
+  out2 = AE_ROUND32X2F64SASYM(out64_2, out64_3); \
+}
+#else /* #if TFLITE_SINGLE_ROUNDING */
+#define MPY_BY_QUANT_MULT_X2_OUT32(out, inp, multiplier, left_shift, right_shift) \
+  out = AE_SLAA32(inp, left_shift); \
+  out = AE_MULFP32X2RAS(out, AE_MOVDA32(multiplier)); \
+  out = AE_SRAA32SYMS(out, right_shift);
+
+#define MPY_BY_QUANT_MULT_X2X2_OUT32(out1, out2, inp1, inp2, multiplier, left_shift, right_shift) \
+{ \
+  ae_int32x2 d_ls = AE_MOVDA32(1<<left_shift); \
+  AE_MUL2P32X4(out1, out2, inp1, inp2, d_ls, d_ls); \
+  AE_MULF2P32X4RAS(out1, out2, out1, out2, AE_MOVDA32(multiplier), AE_MOVDA32(multiplier)); \
+  out1 = AE_SRAA32SYMS(out1, right_shift); \
+  out2 = AE_SRAA32SYMS(out2, right_shift); \
+}
+#endif /* #if TFLITE_SINGLE_ROUNDING */
+
 
 namespace tflite {
 namespace ops {
@@ -124,7 +166,7 @@ void calc_cell_state_without_cifg(int16_t* cell_state,
 
       AE_MUL16X4(d_mul_0, d_mul_1, d_cg_0, d_ig_0);
       d_mul_0 = AE_SRAA32SYMS(d_mul_0, shift2);
-      d_cg_0 = AE_SAT16X4(d_mul_0, d_mul_1);
+      d_cg_0 = AE_SAT16X4(d_mul_0, d_mul_0);
 
       d_cs_w_0 = AE_ADD16S(d_cs_w_0, d_cg_0);
       AE_MINMAX16(d_cs_w_0, d_min, d_max);
@@ -187,11 +229,11 @@ void calc_cell_state_without_cifg(int16_t* cell_state,
 
       AE_MUL16X4(d_mul_0, d_mul_1, d_cs_r_0, d_fg_0);
       d_mul_0 = AE_SRAA32SYMS(d_mul_0, shift1);
-      d_cs_w_0 = AE_SAT16X4(d_mul_0, d_mul_1);
+      d_cs_w_0 = AE_SAT16X4(d_mul_0, d_mul_0);
 
       AE_MUL16X4(d_mul_0, d_mul_1, d_cg_0, d_ig_0);
       d_mul_0 = AE_SRAA32SYMS(d_mul_0, shift2);
-      d_cg_0 = AE_SAT16X4(d_mul_0, d_mul_1);
+      d_cg_0 = AE_SAT16X4(d_mul_0, d_mul_0);
 
       d_cs_w_0 = AE_ADD16S(d_cs_w_0, d_cg_0);
       AE_MINMAX16(d_cs_w_0, d_min, d_max);
@@ -298,7 +340,7 @@ void calc_cell_state_with_cifg(int16_t* cell_state, const int16_t* forget_gate,
       d_1mfg_0 = AE_SUB16S(d_one, d_fg_0);
       AE_MUL16X4(d_mul_0, d_mul_1, d_cg_0, d_1mfg_0);
       d_mul_0 = AE_SRAA32SYMS(d_mul_0, shift2);
-      d_cg_0 = AE_SAT16X4(d_mul_0, d_mul_1);
+      d_cg_0 = AE_SAT16X4(d_mul_0, d_mul_0);
 
       d_cs_w_0 = AE_ADD16S(d_cs_w_0, d_cg_0);
       AE_MINMAX16(d_cs_w_0, d_min, d_max);
@@ -360,12 +402,12 @@ void calc_cell_state_with_cifg(int16_t* cell_state, const int16_t* forget_gate,
 
       AE_MUL16X4(d_mul_0, d_mul_1, d_cs_r_0, d_fg_0);
       d_mul_0 = AE_SRAA32SYMS(d_mul_0, shift1);
-      d_cs_w_0 = AE_SAT16X4(d_mul_0, d_mul_1);
+      d_cs_w_0 = AE_SAT16X4(d_mul_0, d_mul_0);
 
       d_1mfg_0 = AE_SUB16S(d_one, d_fg_0);
       AE_MUL16X4(d_mul_0, d_mul_1, d_cg_0, d_1mfg_0);
       d_mul_0 = AE_SRAA32SYMS(d_mul_0, shift2);
-      d_cg_0 = AE_SAT16X4(d_mul_0, d_mul_1);
+      d_cg_0 = AE_SAT16X4(d_mul_0, d_mul_0);
 
       d_cs_w_0 = AE_ADD16S(d_cs_w_0, d_cg_0);
       AE_MINMAX16(d_cs_w_0, d_min, d_max);
@@ -404,8 +446,13 @@ void xa_nn_elm_mul_16x16_asym8s(int8_t* output, const int16_t* input_1,
   d_multiplier = AE_MOVDA32(multiplier);
   d_zp = AE_MOVDA16(zero_point);
 
+#if TFLITE_SINGLE_ROUNDING
+  left_shift = shift;
+  (void)right_shift;
+#else /* #if TFLITE_SINGLE_ROUNDING */
   left_shift = shift < 0 ? 0 : shift;
   right_shift = shift > 0 ? 0 : -shift;
+#endif /* #if TFLITE_SINGLE_ROUNDING */
 
   d_left_shift = AE_MOVDA32(1 << left_shift);
 #pragma concurrent
@@ -415,18 +462,10 @@ void xa_nn_elm_mul_16x16_asym8s(int8_t* output, const int16_t* input_1,
 
     AE_MUL16X4(data_ab_0, data_ab_1, data_a_0, data_b_0);
     AE_MUL16X4(data_ab_2, data_ab_3, data_a_1, data_b_1);
-    AE_MUL2P32X4(data_ab_0, data_ab_1, data_ab_0, data_ab_1, d_left_shift,
-                 d_left_shift);
-    AE_MUL2P32X4(data_ab_2, data_ab_3, data_ab_2, data_ab_3, d_left_shift,
-                 d_left_shift);
-    AE_MULF2P32X4RAS(data_ab_0, data_ab_1, data_ab_0, data_ab_1, d_multiplier,
-                     d_multiplier);
-    AE_MULF2P32X4RAS(data_ab_2, data_ab_3, data_ab_2, data_ab_3, d_multiplier,
-                     d_multiplier);
-    data_ab_0 = AE_SRAA32SYMS(data_ab_0, right_shift);
-    data_ab_1 = AE_SRAA32SYMS(data_ab_1, right_shift);
-    data_ab_2 = AE_SRAA32SYMS(data_ab_2, right_shift);
-    data_ab_3 = AE_SRAA32SYMS(data_ab_3, right_shift);
+    MPY_BY_QUANT_MULT_X2X2_OUT32(data_ab_0, data_ab_1,
+        data_ab_0, data_ab_1, multiplier, left_shift, right_shift);
+    MPY_BY_QUANT_MULT_X2X2_OUT32(data_ab_2, data_ab_3,
+        data_ab_2, data_ab_3, multiplier, left_shift, right_shift);
     data_c_0 = AE_SAT16X4(data_ab_0, data_ab_1);
     data_c_1 = AE_SAT16X4(data_ab_2, data_ab_3);
     data_c_0 = AE_SUB16S(data_c_0, d_zp);
@@ -445,10 +484,9 @@ void xa_nn_elm_mul_16x16_asym8s(int8_t* output, const int16_t* input_1,
     AE_L16_IP(data_b_0, (ae_int16*)tmp_input_2, 2);
 
     AE_MUL16X4(data_ab_0, data_ab_1, data_a_0, data_b_0);
-    data_ab_0 = AE_MULP32X2(data_ab_0, d_left_shift);
-    data_ab_0 = AE_MULFP32X2RAS(data_ab_0, d_multiplier);
-    data_ab_0 = AE_SRAA32SYMS(data_ab_0, right_shift);
-    data_c_0 = AE_SAT16X4(data_ab_0, data_ab_1);
+    MPY_BY_QUANT_MULT_X2_OUT32(data_ab_0, data_ab_0,
+        multiplier, left_shift, right_shift);
+    data_c_0 = AE_SAT16X4(data_ab_0, data_ab_0);
     data_c_0 = AE_SUB16S(data_c_0, d_zp);
     data_c = AE_SAT8X8X16(data_c_0, data_c_0);
     AE_S8_0_IP(data_c, (ae_int8*)output, 1);
