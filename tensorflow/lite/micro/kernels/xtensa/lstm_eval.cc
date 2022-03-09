@@ -71,7 +71,7 @@ void CalculateLstmGateInteger8x8_16(
   // Initialize scratch buffers with zeros. Note that unlike float and hybrid
   // versions, bias is only used in layer normalization.
   std::fill_n(gate, n_batch * n_cell, 0);
-#if !defined(HIFI5)
+#if !defined(HIFI5) && !defined(HIFI4)
   // For each batch and cell: compute input_weight * input.
   tensor_utils::PortableMatrixBatchVectorMultiplyAccumulate(
       input, input_to_gate_bias, input_to_gate_weights, input_to_gate_scale_a,
@@ -82,11 +82,11 @@ void CalculateLstmGateInteger8x8_16(
         gate, input_to_gate_weights, input, input_to_gate_bias, n_cell, n_input,
         n_input, input_to_gate_scale_a, input_to_gate_scale_b, 0, n_batch);
   }
-#endif  // !defined(HIFI5)
+#endif  // !defined(HIFI5) && !defined(HIFI4)
 // Note: no aux_input.
 
 // For each batch and cell: compute recurrent_weight * output_state.
-#if !defined(HIFI5)
+#if !defined(HIFI5) && !defined(HIFI4)
   tensor_utils::PortableMatrixBatchVectorMultiplyAccumulate(
       output_state, recurrent_to_gate_bias, recurrent_to_gate_weights,
       recurrent_to_gate_scale_a, recurrent_to_gate_scale_b, n_batch, n_output,
@@ -98,7 +98,7 @@ void CalculateLstmGateInteger8x8_16(
         n_cell, n_output, n_output, recurrent_to_gate_scale_a,
         recurrent_to_gate_scale_b, 0, n_batch);
   }
-#endif  // !defined(HIFI5)
+#endif  // !defined(HIFI5) && !defined(HIFI4)
   // For each batch and cell: compute cell_weight * cell_state (peephole LSTM)
   if (use_peephole) {
     tensor_utils::PortableVectorBatchVectorCwiseProductAccumulate(
@@ -115,18 +115,18 @@ void CalculateLstmGateInteger8x8_16(
   // Apply activation
   switch (activation) {
     case kTfLiteActSigmoid:
-#if !defined(HIFI5)
+#if !defined(HIFI5) && !defined(HIFI4)
       tensor_utils::PortableApplySigmoid(gate, n_batch, n_cell, gate);
 #else
       xa_nn_vec_sigmoid_16_16(gate, gate, n_batch * n_cell);
-#endif  // !defined(HIFI5)
+#endif  // !defined(HIFI5) && !defined(HIFI4)
       break;
     case kTfLiteActTanh:
-#if !defined(HIFI5)
+#if !defined(HIFI5) && !defined(HIFI4)
       tensor_utils::PortableApplyTanh(3, gate, n_batch, n_cell, gate);
 #else
       xa_nn_vec_tanh_16_16(gate, gate, 3, n_batch * n_cell);
-#endif  // !defined(HIFI5)
+#endif  // !defined(HIFI5) && !defined(HIFI4)
       break;
     default:
       // Only Sigmoid or Tanh is used.
@@ -150,7 +150,7 @@ void UpdateLstmCellInteger(int n_batch, int n_cell, int16_t* cell_state,
                            int32_t cell_state_scale, const int16_t* input_gate,
                            int16_t* forget_gate, const int16_t* cell_gate,
                            bool use_cifg, int16_t clip) {
-#if !defined(HIFI5)
+#if !defined(HIFI5) && !defined(HIFI4)
   // Use the forget_gate array as scratch, as input_gate array is not allocated
   // in CIFG case. (Be careful not to write to the scratch before reading the
   // forget gate data.)
@@ -182,7 +182,7 @@ void UpdateLstmCellInteger(int n_batch, int n_cell, int16_t* cell_state,
                                  n_batch * n_cell);
   }
 
-#endif  // !defined(HIFI5)
+#endif  // !defined(HIFI5) && !defined(HIFI4)
 }
 
 // Calculates the output state tensor of an LSTM step. See Float and hybrid
@@ -213,22 +213,22 @@ void CalculateLstmOutputInteger8x8_16(
     int32_t output_state_zp, int8_t quantized_proj_clip, int8_t* output_state,
     int16_t* scratch0, int8_t* scratch1, int32_t* scratch2) {
 // Note: unlike float/hybrid, the activation is always Tanh.
-#if !defined(HIFI5)
+#if !defined(HIFI5) && !defined(HIFI4)
   tensor_utils::PortableApplyTanh(15 + cell_state_scale, cell_state, n_batch,
                                   n_cell, scratch0);
 #else
   xa_nn_vec_tanh_16_16(scratch0, cell_state, (15 + cell_state_scale),
                        n_batch * n_cell);
-#endif  // !defined(HIFI5)
+#endif  // !defined(HIFI5) && !defined(HIFI4)
 
-#if !defined(HIFI5)
+#if !defined(HIFI5) && !defined(HIFI4)
   tensor_utils::PortableCwiseMul(output_gate, scratch0, hidden_scale_a,
                                  hidden_scale_b, n_batch, n_cell, hidden_zp,
                                  scratch1);
 #else
   xa_nn_elm_mul_16x16_asym8s(scratch1, output_gate, scratch0, hidden_scale_a,
                              hidden_scale_b, hidden_zp, n_batch * n_cell);
-#endif  // !defined(HIFI5)
+#endif  // !defined(HIFI5) && !defined(HIFI4)
 
   const bool use_projection = (projection_weights != nullptr);
 
