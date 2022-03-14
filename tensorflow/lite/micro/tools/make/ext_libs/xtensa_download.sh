@@ -47,9 +47,9 @@ if [ ! -d ${DOWNLOADS_DIR} ]; then
 fi
 
 if [[ ${2} == "hifi4" ]]; then
-  LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi4/raw/master/archive/xa_nnlib_hifi4_11_09_2021.zip"
+  LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi4/raw/master/archive/xa_nnlib_hifi4_08_02_2022.zip"
   LIBRARY_DIRNAME="xa_nnlib_hifi4"
-  LIBRARY_MD5="fd6445b3d281220e2f584e2adc10165d"
+  LIBRARY_MD5="d930ec512df8e7dc814602319d2948b5"
 elif [[ ${2} == "hifi5" ]]; then
   LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi5/raw/master/archive/xa_nnlib_hifi5_02_01_2022.zip"
   LIBRARY_DIRNAME="xa_nnlib_hifi5"
@@ -82,7 +82,9 @@ else
   pushd "${LIBRARY_INSTALL_PATH}" > /dev/null
   chmod -R +w ./
   create_git_repo ./
-  apply_patch_to_folder ./ "../../ext_libs/xa_nnlib_${2}.patch" "TFLM patch"
+  if [[ ${2} == "hifi5" ]]; then
+    apply_patch_to_folder ./ "../../ext_libs/xa_nnlib_${2}.patch" "TFLM patch"
+  fi
 fi
 
 
