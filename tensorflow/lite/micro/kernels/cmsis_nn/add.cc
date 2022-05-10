@@ -27,10 +27,8 @@ limitations under the License.
 #include "tensorflow/lite/micro/memory_helpers.h"
 
 namespace tflite {
-namespace ops {
-namespace micro {
-namespace add {
 
+namespace {
 constexpr int kInputTensor1 = 0;
 constexpr int kInputTensor2 = 1;
 constexpr int kOutputTensor = 0;
@@ -66,12 +64,12 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteAddParams* params,
                              OpData* data) {
   data->requires_broadcast = !HaveSameShapes(input1, input2);
 
-  if (output->type == kTfLiteInt8) {
+  if (output->type == kTfLiteInt8 || output->type == kTfLiteInt16) {
     // 8bit -> 8bit general quantized path, with general rescalings
     data->input1_offset = -input1->params.zero_point;
     data->input2_offset = -input2->params.zero_point;
     data->output_offset = output->params.zero_point;
-    data->left_shift = 20;
+    data->left_shift = (output->type == kTfLiteInt16) ? 15 : 20;
     const double twice_max_input_scale =
         2 * static_cast<double>(
                 std::max(input1->params.scale, input2->params.scale));
@@ -104,9 +102,10 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteAddParams* params,
   return kTfLiteOk;
 }
 
-void EvalAdd(TfLiteContext* context, TfLiteNode* node, TfLiteAddParams* params,
-             const OpData* data, const TfLiteEvalTensor* input1,
-             const TfLiteEvalTensor* input2, TfLiteEvalTensor* output) {
+void EvalAddFloat(TfLiteContext* context, TfLiteNode* node,
+                  TfLiteAddParams* params, const OpData* data,
+                  const TfLiteEvalTensor* input1,
+                  const TfLiteEvalTensor* input2, TfLiteEvalTensor* output) {
   tflite::ArithmeticParams op_params;
   SetActivationParams(data->output_activation_min_f32,
                       data->output_activation_max_f32, &op_params);
@@ -150,46 +149,83 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
       tflite::micro::GetTensorShape(input1),
       tflite::micro::GetTensorShape(input2), &op_params);
 
-  if (need_broadcast) {
-    reference_integer_ops::BroadcastAdd4DSlow(
-        op_params, tflite::micro::GetTensorShape(input1),
-        tflite::micro::GetTensorData<int8_t>(input1),
-        tflite::micro::GetTensorShape(input2),
-        tflite::micro::GetTensorData<int8_t>(input2),
-        tflite::micro::GetTensorShape(output),
-        tflite::micro::GetTensorData<int8_t>(output));
-  } else {
-    arm_elementwise_add_s8(
-        tflite::micro::GetTensorData<int8_t>(input1),
-        tflite::micro::GetTensorData<int8_t>(input2), op_params.input1_offset,
-        op_params.input1_multiplier, op_params.input1_shift,
-        op_params.input2_offset, op_params.input2_multiplier,
-        op_params.input2_shift, op_params.left_shift,
-        tflite::micro::GetTensorData<int8_t>(output), op_params.output_offset,
-        op_params.output_multiplier, op_params.output_shift,
-        op_params.quantized_activation_min, op_params.quantized_activation_max,
-        MatchingElementsSize(tflite::micro::GetTensorShape(input1),
-                             tflite::micro::GetTensorShape(input2),
-                             tflite::micro::GetTensorShape(output)));
+  switch (output->type) {
+    case kTfLiteInt8: {
+      if (need_broadcast) {
+        reference_integer_ops::BroadcastAdd4DSlow(
+            op_params, tflite::micro::GetTensorShape(input1),
+            tflite::micro::GetTensorData<int8_t>(input1),
+            tflite::micro::GetTensorShape(input2),
+            tflite::micro::GetTensorData<int8_t>(input2),
+            tflite::micro::GetTensorShape(output),
+            tflite::micro::GetTensorData<int8_t>(output));
+      } else {
+        arm_elementwise_add_s8(
+            tflite::micro::GetTensorData<int8_t>(input1),
+            tflite::micro::GetTensorData<int8_t>(input2),
+            op_params.input1_offset, op_params.input1_multiplier,
+            op_params.input1_shift, op_params.input2_offset,
+            op_params.input2_multiplier, op_params.input2_shift,
+            op_params.left_shift, tflite::micro::GetTensorData<int8_t>(output),
+            op_params.output_offset, op_params.output_multiplier,
+            op_params.output_shift, op_params.quantized_activation_min,
+            op_params.quantized_activation_max,
+            MatchingElementsSize(tflite::micro::GetTensorShape(input1),
+                                 tflite::micro::GetTensorShape(input2),
+                                 tflite::micro::GetTensorShape(output)));
+      }
+      break;
+    }
+    case kTfLiteInt16: {
+      if (need_broadcast) {
+        reference_ops::BroadcastAdd4DSlow(
+            op_params, tflite::micro::GetTensorShape(input1),
+            tflite::micro::GetTensorData<int16_t>(input1),
+            tflite::micro::GetTensorShape(input2),
+            tflite::micro::GetTensorData<int16_t>(input2),
+            tflite::micro::GetTensorShape(output),
+            tflite::micro::GetTensorData<int16_t>(output));
+      } else {
+        reference_ops::Add(op_params, tflite::micro::GetTensorShape(input1),
+                           tflite::micro::GetTensorData<int16_t>(input1),
+                           tflite::micro::GetTensorShape(input2),
+                           tflite::micro::GetTensorData<int16_t>(input2),
+                           tflite::micro::GetTensorShape(output),
+                           tflite::micro::GetTensorData<int16_t>(output),
+                           false);
+      }
+      break;
+    }
+    default:
+      TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
+                         TfLiteTypeGetName(output->type), output->type);
+      return kTfLiteError;
   }
 
   return kTfLiteOk;
 }
 
-void* Init(TfLiteContext* context, const char* buffer, size_t length) {
+}  // namespace
+
+void* InitAdd(TfLiteContext* context, const char* buffer, size_t length) {
   TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
   return context->AllocatePersistentBuffer(context, sizeof(OpData));
 }
 
-TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
+TfLiteStatus PrepareAdd(TfLiteContext* context, TfLiteNode* node) {
   TFLITE_DCHECK(node->user_data != nullptr);
   TFLITE_DCHECK(node->builtin_data != nullptr);
 
-  const TfLiteTensor* input1 = GetInput(context, node, kInputTensor1);
+  MicroContext* micro_context = GetMicroContext(context);
+
+  TfLiteTensor* input1 =
+      micro_context->AllocateTempInputTensor(node, kInputTensor1);
   TF_LITE_ENSURE(context, input1 != nullptr);
-  const TfLiteTensor* input2 = GetInput(context, node, kInputTensor2);
+  TfLiteTensor* input2 =
+      micro_context->AllocateTempInputTensor(node, kInputTensor2);
   TF_LITE_ENSURE(context, input2 != nullptr);
-  TfLiteTensor* output = GetOutput(context, node, kOutputTensor);
+  TfLiteTensor* output =
+      micro_context->AllocateTempOutputTensor(node, kOutputTensor);
   TF_LITE_ENSURE(context, output != nullptr);
 
   OpData* data = static_cast<OpData*>(node->user_data);
@@ -198,10 +234,14 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE_STATUS(
       CalculateOpData(context, params, input1, input2, output, data));
 
+  micro_context->DeallocateTempTfLiteTensor(input1);
+  micro_context->DeallocateTempTfLiteTensor(input2);
+  micro_context->DeallocateTempTfLiteTensor(output);
+
   return kTfLiteOk;
 }
 
-TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
+TfLiteStatus EvalAdd(TfLiteContext* context, TfLiteNode* node) {
   auto* params = reinterpret_cast<TfLiteAddParams*>(node->builtin_data);
 
   const TfLiteEvalTensor* input1 =
@@ -215,8 +255,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   const OpData* data = static_cast<const OpData*>(node->user_data);
 
   if (output->type == kTfLiteFloat32) {
-    EvalAdd(context, node, params, data, input1, input2, output);
-  } else if (output->type == kTfLiteInt8) {
+    EvalAddFloat(context, node, params, data, input1, input2, output);
+  } else if (output->type == kTfLiteInt8 || output->type == kTfLiteInt16) {
     TF_LITE_ENSURE_OK(context, EvalAddQuantized(context, node, params, data,
                                                 input1, input2, output));
   } else {
@@ -228,19 +268,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 }
 
-}  // namespace add
-
 TfLiteRegistration Register_ADD() {
-  return {/*init=*/add::Init,
-          /*free=*/nullptr,
-          /*prepare=*/add::Prepare,
-          /*invoke=*/add::Eval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(InitAdd, PrepareAdd, EvalAdd);
 }
 
-}  // namespace micro
-}  // namespace ops
 }  // namespace tflite

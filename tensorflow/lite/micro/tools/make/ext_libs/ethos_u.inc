@@ -1,3 +1,18 @@
+# Copyright 2022 The TensorFlow Authors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 # Arm Compiler will not link the Math library (see below), therefore we're filtering it out.
 # See Fatal error: L6450U: Cannot find library m:
 # "Arm Compiler is designed to run in a bare metal environment,
@@ -40,17 +55,22 @@ THIRD_PARTY_CC_HDRS += $(CMSIS_PATH)/CMSIS/Core/Include/cmsis_compiler.h
 
 INCLUDES += -I$(ETHOSU_DRIVER_PATH)/include \
             -I$(CMSIS_PATH)/CMSIS/Core/Include
-GENERATED_PROJECT_INCLUDES += -I./$(ETHOSU_DRIVER_PATH)/include
 
-ETHOSU_LOG_SEVERITY := ETHOSU_LOG_WARN
-CCFLAGS += -DETHOSU_LOG_SEVERITY=$(ETHOSU_LOG_SEVERITY)
-
-# TODO(#47718): resolve warnings.
-CCFLAGS += \
-  -Wno-return-type \
-  -Wno-format
-
-ifeq ($(TOOLCHAIN), gcc)
-  CCFLAGS += \
-    -Wno-unused-but-set-variable
+ETHOSU_FLAGS := -DETHOSU_LOG_SEVERITY=ETHOSU_LOG_WARN
+ifeq ($(ETHOSU_ARCH), u55)
+  ETHOSU_FLAGS += \
+    -DETHOSU_ARCH=u55 \
+    -DETHOSU55
+else ifeq ($(ETHOSU_ARCH), u65)
+  ETHOSU_FLAGS += \
+    -DETHOSU_ARCH=u65 \
+    -DETHOSU65
+else
+  $(error "ETHOSU_ARCH=$(ETHOSU_ARCH) is not supported")
 endif
+CCFLAGS += ${ETHOSU_FLAGS}
+CXXFLAGS += ${ETHOSU_FLAGS}
+
+# Convert downloaded person detect int8 model.
+$(GENERATED_SRCS_DIR)tensorflow/lite/micro/models/person_detect_model_data_vela.cc:
+	$(info Result of person detect int8 model conversion: $(shell $(MAKEFILE_DIR)/ext_libs/person_detection_int8_vela_convert.sh ${MAKEFILE_DIR}/downloads $(GENERATED_SRCS_DIR)))

@@ -1,4 +1,3 @@
-# Lint as: python3
 # coding=utf-8
 # Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
@@ -14,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 """Split data into train, validation and test dataset according to person.
 
 That is, use some people's data as train, some other people's data as

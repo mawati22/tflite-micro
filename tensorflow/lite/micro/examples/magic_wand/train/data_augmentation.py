@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 # pylint: disable=g-bad-import-order
-
 """Data augmentation that will be used in data_load.py."""
 
 from __future__ import absolute_import
@@ -28,8 +26,7 @@ import numpy as np
 
 def time_wrapping(molecule, denominator, data):
   """Generate (molecule/denominator)x speed data."""
-  tmp_data = [[0
-               for i in range(len(data[0]))]
+  tmp_data = [[0 for i in range(len(data[0]))]
               for j in range((int(len(data) / molecule) - 1) * denominator)]
   for i in range(int(len(data) / molecule) - 1):
     for j in range(len(data[i])):

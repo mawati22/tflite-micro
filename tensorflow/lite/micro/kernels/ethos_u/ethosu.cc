@@ -1,4 +1,4 @@
-/* Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ limitations under the License.
 #include "flatbuffers/flexbuffers.h"
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
+#include "tensorflow/lite/micro/micro_context.h"
 
 namespace tflite {
 namespace {
@@ -35,8 +36,6 @@ void* Init(TfLiteContext* context, const char* buffer, size_t length) {
   return context->AllocatePersistentBuffer(context, sizeof(OpData));
 }
 
-void Free(TfLiteContext* context, void* buffer) {}
-
 TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TFLITE_DCHECK(context != nullptr);
   TF_LITE_ENSURE(context, node->inputs->size > 0);
@@ -53,9 +52,10 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
       context, num_base_addr * sizeof(size_t), &data->base_addr_size_idx));
 
   // Get command stream data size
-  TfLiteTensor* tensor = context->GetTensor(context, node->inputs->data[0]);
+  MicroContext* micro_context = GetMicroContext(context);
+  TfLiteTensor* tensor = micro_context->AllocateTempInputTensor(node, 0);
   data->cms_data_size = tensor->bytes;
-
+  micro_context->DeallocateTempTfLiteTensor(tensor);
   return kTfLiteOk;
 }
 
@@ -120,8 +120,12 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   // the 8 first tensors
   num_tensors = std::min(num_tensors, 8);
 
-  result = ethosu_invoke_v2(cms_data, data->cms_data_size, base_addrs,
-                            base_addrs_size, num_tensors);
+  struct ethosu_driver* drv = ethosu_reserve_driver();
+  result = ethosu_invoke_v3(drv, cms_data, data->cms_data_size, base_addrs,
+                            base_addrs_size, num_tensors,
+                            GetMicroContext(context)->external_context());
+  ethosu_release_driver(drv);
+
   if (-1 == result) {
     return kTfLiteError;
   } else {
@@ -132,14 +136,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace
 
 TfLiteRegistration* Register_ETHOSU() {
-  static TfLiteRegistration r = {Init,
-                                 Free,
-                                 Prepare,
-                                 Eval,
-                                 /*profiling_string=*/nullptr,
-                                 /*builtin_code=*/0,
-                                 /*custom_name=*/nullptr,
-                                 /*version=*/0};
+  static TfLiteRegistration r = tflite::micro::RegisterOp(Init, Prepare, Eval);
   return &r;
 }
 

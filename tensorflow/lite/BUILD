@@ -11,3 +11,14 @@ cc_library(
     deps = ["//tensorflow/lite/c:common"],
 )
 
+cc_library(
+    name = "kernel_api",
+    hdrs = [
+        "builtin_op_data.h",
+        "builtin_ops.h",
+        "context_util.h",
+    ],
+    deps = [
+        "//tensorflow/lite/c:common",
+    ],
+)

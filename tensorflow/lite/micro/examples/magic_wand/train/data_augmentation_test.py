@@ -1,4 +1,3 @@
-# Lint as: python3
 # Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 # pylint: disable=g-bad-import-order
-
 """Test for data_augmentation.py."""
 
 from __future__ import absolute_import

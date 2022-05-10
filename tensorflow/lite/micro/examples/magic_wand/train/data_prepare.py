@@ -1,4 +1,3 @@
-# Lint as: python3
 # coding=utf-8
 # Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 #
@@ -14,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 """Prepare data for further process.
 
 Read data from "/slope", "/ring", "/wing", "/negative" and save them

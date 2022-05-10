@@ -1,4 +1,4 @@
-/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -44,19 +44,26 @@ void* Init(TfLiteContext* context, const char* buffer, size_t length) {
 }
 
 TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
+  MicroContext* micro_context = GetMicroContext(context);
+
   TFLITE_DCHECK(node->user_data != nullptr);
   OpData* data = static_cast<OpData*>(node->user_data);
 
   TF_LITE_ENSURE(context, NumInputs(node) == 2 || NumInputs(node) == 3);
   TF_LITE_ENSURE_EQ(context, NumOutputs(node), 1);
 
-  const TfLiteTensor* input = GetInput(context, node, /*index=*/0);
+  TfLiteTensor* input =
+      micro_context->AllocateTempInputTensor(node, /*index=*/0);
   TF_LITE_ENSURE(context, input != nullptr);
-  const TfLiteTensor* paddings = GetInput(context, node, /*index=*/1);
+  TfLiteTensor* paddings =
+      micro_context->AllocateTempInputTensor(node, /*index=*/1);
   TF_LITE_ENSURE(context, paddings != nullptr);
-  const TfLiteTensor* constant_values =
-      NumInputs(node) == 3 ? GetInput(context, node, /*index=*/2) : nullptr;
-  TfLiteTensor* output = GetOutput(context, node, /*index=*/0);
+  TfLiteTensor* constant_values =
+      NumInputs(node) == 3
+          ? micro_context->AllocateTempInputTensor(node, /*index=*/2)
+          : nullptr;
+  TfLiteTensor* output =
+      micro_context->AllocateTempOutputTensor(node, /*index=*/0);
   TF_LITE_ENSURE(context, output != nullptr);
 
   TF_LITE_ENSURE_EQ(context, input->type, output->type);
@@ -104,21 +111,14 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
     data->params.right_padding[idx] = paddings_data[idx * 2 + 1];
   }
 
-  if (input->type == kTfLiteInt8 || input->type == kTfLiteUInt8) {
+  if (input->type == kTfLiteInt8) {
     if (constant_values == nullptr) {
       // Quantized Pad requires that 0 is represented in the quantized
       // range.
-      if (input->type == kTfLiteUInt8) {
-        TF_LITE_ENSURE(context, output->params.zero_point >=
-                                    std::numeric_limits<uint8_t>::min());
-        TF_LITE_ENSURE(context, output->params.zero_point <=
-                                    std::numeric_limits<uint8_t>::max());
-      } else {
-        TF_LITE_ENSURE(context, output->params.zero_point >=
-                                    std::numeric_limits<int8_t>::min());
-        TF_LITE_ENSURE(context, output->params.zero_point <=
-                                    std::numeric_limits<int8_t>::max());
-      }
+      TF_LITE_ENSURE(context, output->params.zero_point >=
+                                  std::numeric_limits<int8_t>::min());
+      TF_LITE_ENSURE(context, output->params.zero_point <=
+                                  std::numeric_limits<int8_t>::max());
     } else {
       // Quantized Pad requires that 'constant_values' is represented in the
       // same quantized range as the input and output tensors.
@@ -129,6 +129,13 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
     }
     data->output_zero_point = output->params.zero_point;
   }
+
+  micro_context->DeallocateTempTfLiteTensor(input);
+  micro_context->DeallocateTempTfLiteTensor(paddings);
+  if (constant_values != nullptr) {
+    micro_context->DeallocateTempTfLiteTensor(constant_values);
+  }
+  micro_context->DeallocateTempTfLiteTensor(output);
 
   return kTfLiteOk;
 }
@@ -165,26 +172,6 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                            tflite::micro::GetTensorData<float>(output));
       }
     } break;
-    case kTfLiteUInt8: {
-      uint8_t pad_value;
-      if (constant_values == nullptr) {
-        pad_value = static_cast<uint8_t>(data->output_zero_point);
-      } else {
-        pad_value = *tflite::micro::GetTensorData<uint8_t>(constant_values);
-      }
-      if (data->params.resizing_category == ResizingCategory::kImageStyle) {
-        reference_ops::PadImageStyle(
-            data->params, tflite::micro::GetTensorShape(input),
-            tflite::micro::GetTensorData<uint8_t>(input), &pad_value,
-            tflite::micro::GetTensorShape(output),
-            tflite::micro::GetTensorData<uint8_t>(output));
-      } else {
-        reference_ops::Pad(data->params, tflite::micro::GetTensorShape(input),
-                           tflite::micro::GetTensorData<uint8_t>(input),
-                           &pad_value, tflite::micro::GetTensorShape(output),
-                           tflite::micro::GetTensorData<uint8_t>(output));
-      }
-    } break;
     case kTfLiteInt8: {
       int8_t pad_value;
       if (constant_values == nullptr) {
@@ -192,47 +179,6 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       } else {
         pad_value = *tflite::micro::GetTensorData<int8_t>(constant_values);
       }
-#if defined(HIFI5) || defined(FUSION_F1)
-      if((input->dims->size <= 4))
-      {
-        int err;
-        const int8_t *input_data_ptr;
-        int8_t *output_data_ptr;
-
-        input_data_ptr  = tflite::micro::GetTensorData<int8_t>(input);
-        output_data_ptr = tflite::micro::GetTensorData<int8_t>(output);
-
-        const TfLiteEvalTensor* paddings = tflite::micro::GetEvalInput(context, node, /*index=*/1);
-        const int32_t* paddings_data_ptr = tflite::micro::GetTensorData<int32_t>(paddings);
-
-        err =  xa_nn_pad_8_8(output_data_ptr
-                            ,output->dims->data
-                            ,input_data_ptr
-                            ,input->dims->data
-                            ,paddings_data_ptr
-                            ,paddings->dims->data
-                            ,output->dims->size
-                            ,input->dims->size
-                            ,paddings->dims->size
-                            ,pad_value);
-        TF_LITE_ENSURE(context, (err==0) ); 
-      }
-      else
-      {
-        if (data->params.resizing_category == ResizingCategory::kImageStyle) {
-          reference_ops::PadImageStyle(
-              data->params, tflite::micro::GetTensorShape(input),
-              tflite::micro::GetTensorData<int8_t>(input), &pad_value,
-              tflite::micro::GetTensorShape(output),
-              tflite::micro::GetTensorData<int8_t>(output));
-        } else {
-          reference_ops::Pad(data->params, tflite::micro::GetTensorShape(input),
-                            tflite::micro::GetTensorData<int8_t>(input),
-                            &pad_value, tflite::micro::GetTensorShape(output),
-                            tflite::micro::GetTensorData<int8_t>(output));
-        }
-      }
-#else
       if (data->params.resizing_category == ResizingCategory::kImageStyle) {
         reference_ops::PadImageStyle(
             data->params, tflite::micro::GetTensorShape(input),
@@ -245,7 +191,38 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                            &pad_value, tflite::micro::GetTensorShape(output),
                            tflite::micro::GetTensorData<int8_t>(output));
       }
-#endif // defined(HIFI5) || defined(FUSION_F1)
+    } break;
+    case kTfLiteInt16: {
+      int16_t pad_value =
+          constant_values == nullptr
+              ? 0
+              : *tflite::micro::GetTensorData<int16_t>(constant_values);
+#if defined(HIFI4_INTERNAL)
+      /* NNLib currently only supports upto 4D input tensors */
+      if (tflite::micro::GetTensorShape(input).DimensionsCount() == 4) {
+        const TfLiteEvalTensor* paddings =
+            tflite::micro::GetEvalInput(context, node, /*index=*/1);
+        int32_t err = xa_nn_pad_16_16(
+            tflite::micro::GetTensorData<int16_t>(output),
+            tflite::micro::GetTensorShape(output).DimsData(),
+            tflite::micro::GetTensorData<int16_t>(input),
+            tflite::micro::GetTensorShape(input).DimsData(),
+            tflite::micro::GetTensorData<int32_t>(paddings),
+            tflite::micro::GetTensorShape(paddings).DimsData(),
+            tflite::micro::GetTensorShape(output).DimensionsCount(),
+            tflite::micro::GetTensorShape(input).DimensionsCount(),
+            tflite::micro::GetTensorShape(paddings).DimensionsCount(),
+            pad_value);
+        if (err != 0) return kTfLiteError;
+      } else {
+#endif  // HIFI4_INTERNAL
+        reference_ops::Pad(data->params, tflite::micro::GetTensorShape(input),
+                           tflite::micro::GetTensorData<int16_t>(input),
+                           &pad_value, tflite::micro::GetTensorShape(output),
+                           tflite::micro::GetTensorData<int16_t>(output));
+#if defined(HIFI4_INTERNAL)
+      }
+#endif  // HIFI4_INTERNAL
     } break;
     case kTfLiteInt32: {
       int32_t pad_value =
@@ -263,33 +240,18 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                          TfLiteTypeGetName(input->type));
       return kTfLiteError;
   }
-#undef TF_LITE_PAD
   return kTfLiteOk;
 }
 
 }  // namespace pad
 
 TfLiteRegistration Register_PAD() {
-  return {/*init=*/pad::Init,
-          /*free=*/nullptr,
-          /*prepare=*/pad::Prepare,
-          /*invoke=*/pad::Eval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(pad::Init, pad::Prepare, pad::Eval);
 }
 
 // Also register Pad as PadV2.
 TfLiteRegistration Register_PADV2() {
-  return {/*init=*/pad::Init,
-          /*free=*/nullptr,
-          /*prepare=*/pad::Prepare,
-          /*invoke=*/pad::Eval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(pad::Init, pad::Prepare, pad::Eval);
 }
 
 }  // namespace micro

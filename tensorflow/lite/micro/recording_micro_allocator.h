@@ -16,9 +16,9 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_MICRO_RECORDING_MICRO_ALLOCATOR_H_
 #define TENSORFLOW_LITE_MICRO_RECORDING_MICRO_ALLOCATOR_H_
 
+#include "tensorflow/lite/micro/arena_allocator/recording_simple_memory_allocator.h"
 #include "tensorflow/lite/micro/compatibility.h"
 #include "tensorflow/lite/micro/micro_allocator.h"
-#include "tensorflow/lite/micro/recording_simple_memory_allocator.h"
 
 namespace tflite {
 
@@ -58,6 +58,9 @@ class RecordingMicroAllocator : public MicroAllocator {
                                          size_t arena_size,
                                          ErrorReporter* error_reporter);
 
+  // Returns the fixed amount of memory overhead of RecordingMicroAllocator.
+  static size_t GetDefaultTailUsage();
+
   // Returns the recorded allocations information for a given allocation type.
   RecordedAllocation GetRecordedAllocation(
       RecordedAllocationType allocation_type) const;
@@ -92,6 +95,7 @@ class RecordingMicroAllocator : public MicroAllocator {
 
  private:
   RecordingMicroAllocator(RecordingSimpleMemoryAllocator* memory_allocator,
+                          MicroMemoryPlanner* memory_planner,
                           ErrorReporter* error_reporter);
 
   void PrintRecordedAllocation(RecordedAllocationType allocation_type,
