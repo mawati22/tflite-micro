@@ -41,11 +41,14 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE_EQ(context, NumInputs(node), 1);
   TF_LITE_ENSURE_EQ(context, NumOutputs(node), 1);
 
-  const TfLiteTensor* input;
-  TF_LITE_ENSURE_OK(context, GetInputSafe(context, node, kInputTensor, &input));
-  TfLiteTensor* output;
-  TF_LITE_ENSURE_OK(context,
-                    GetOutputSafe(context, node, kOutputTensor, &output));
+  MicroContext* micro_context = GetMicroContext(context);
+
+  TfLiteTensor* input =
+      micro_context->AllocateTempInputTensor(node, kInputTensor);
+  TF_LITE_ENSURE(context, input != nullptr);
+  TfLiteTensor* output =
+      micro_context->AllocateTempOutputTensor(node, kOutputTensor);
+  TF_LITE_ENSURE(context, output != nullptr);
 
   TF_LITE_ENSURE_EQ(context, NumDimensions(input), 4);
 
@@ -84,6 +87,9 @@ TfLiteStatus CalculateOpData(TfLiteContext* context, TfLiteNode* node) {
   output->dims->data[kWidthRank] = output_width;
   output->dims->data[kDepthRank] = output_channels;
 
+  micro_context->DeallocateTempTfLiteTensor(input);
+  micro_context->DeallocateTempTfLiteTensor(output);
+
   return kTfLiteOk;
 }
 
@@ -112,7 +118,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                                   tflite::micro::GetTensorData<float>(output));
       break;
     case kTfLiteInt8:
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
       {
         const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
         const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
@@ -148,7 +154,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                                   tflite::micro::GetTensorData<int8_t>(input),
                                   tflite::micro::GetTensorShape(output),
                                   tflite::micro::GetTensorData<int8_t>(output));
-#endif // defined(HIFI5) || defined(FUSION_F1)
+#endif // defined(HIFI5) || defined(HIFI4)
       break;
     default:
       TF_LITE_KERNEL_LOG(
@@ -163,14 +169,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace
 
 TfLiteRegistration Register_DEPTH_TO_SPACE() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/Prepare,
-          /*invoke=*/Eval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(nullptr, Prepare, Eval);
 }
 
 }  // namespace tflite

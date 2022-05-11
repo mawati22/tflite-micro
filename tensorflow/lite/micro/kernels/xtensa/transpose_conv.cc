@@ -311,7 +311,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
             tflite::micro::GetTensorData<int16_t>(output),
             tflite::micro::GetTensorShape(nullptr), nullptr, scratch_buffer);
       } else {
-#if defined(HIFI4_INTERNAL)
+#if defined(HIFI4_INTERNAL) || defined(HIFI4)
         const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
         const RuntimeShape& filter_shape =
             tflite::micro::GetTensorShape(filter);
@@ -342,7 +342,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
         const int num_elements = output_shape.FlatSize();
 
         for (int b = 0; b < batches; b++) {
-          xa_nn_transpose_conv(
+          xa_nn_transpose_conv_sym8sxsym16s(
               &output_data[b * output_height * output_width * output_depth],
               const_cast<WORD16*>(
                   &input_data[b * input_height * input_width * input_depth]),

@@ -42,8 +42,12 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE_EQ(context, NumInputs(node), 3);
   TF_LITE_ENSURE_EQ(context, NumOutputs(node), 1);
 
-  const TfLiteTensor* input = GetInput(context, node, kInputTensor);
-  TfLiteTensor* output = GetOutput(context, node, kOutputTensor);
+  MicroContext* micro_context = GetMicroContext(context);
+
+  TfLiteTensor* input =
+      micro_context->AllocateTempInputTensor(node, kInputTensor);
+  TfLiteTensor* output =
+      micro_context->AllocateTempOutputTensor(node, kOutputTensor);
   TF_LITE_ENSURE(context, input != nullptr && output != nullptr);
 
   TF_LITE_ENSURE(context, NumDimensions(input) >= kInputOutputMinDimensionNum);
@@ -51,6 +55,9 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE(context, NumDimensions(input) <= kInputOutputMaxDimensionNum);
   TF_LITE_ENSURE(context, NumDimensions(output) <= kInputOutputMaxDimensionNum);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, output->type);
+
+  micro_context->DeallocateTempTfLiteTensor(input);
+  micro_context->DeallocateTempTfLiteTensor(output);
 
   return kTfLiteOk;
 }
@@ -78,7 +85,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorData<float>(output));
       break;
     case kTfLiteInt8:
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
       {
         const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
         const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
@@ -106,7 +113,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorData<int32_t>(crops),
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<int8_t>(output));
-#endif // defined(HIFI5) || defined(FUSION_F1)
+#endif // defined(HIFI5) || defined(HIFI4)
       break;
     default:
       TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
@@ -119,14 +126,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace.
 
 TfLiteRegistration Register_BATCH_TO_SPACE_ND() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/Prepare,
-          /*invoke=*/Eval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(nullptr, Prepare, Eval);
 }
 
 }  // namespace tflite
