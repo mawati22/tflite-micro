@@ -12,6 +12,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
+#include "tensorflow/lite/micro/kernels/logical.h"
+
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/kernels/internal/reference/binary_function.h"
 #include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
@@ -20,119 +22,95 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 
 namespace tflite {
-namespace ops {
-namespace micro {
-namespace logical {
 namespace {
 
 // Input/output tensor index.
-constexpr int kInputTensor1 = 0;
-constexpr int kInputTensor2 = 1;
-constexpr int kOutputTensor = 0;
+extern const int kLogicalInputTensor1 = 0;
+extern const int kLogicalInputTensor2 = 1;
+extern const int kLogicalOutputTensor = 0;
 
-bool LogicalOr(bool x, bool y) { return x || y; }
-bool LogicalAnd(bool x, bool y) { return x && y; }
-
-TfLiteStatus LogicalImpl(TfLiteContext* context, TfLiteNode* node,
+TfLiteStatus HiFiLogicalImpl(TfLiteContext* context, TfLiteNode* node,
                          bool (*func)(bool, bool)) {
   const TfLiteEvalTensor* input1 =
-      tflite::micro::GetEvalInput(context, node, kInputTensor1);
+      tflite::micro::GetEvalInput(context, node, kLogicalInputTensor1);
   const TfLiteEvalTensor* input2 =
-      tflite::micro::GetEvalInput(context, node, kInputTensor2);
+      tflite::micro::GetEvalInput(context, node, kLogicalInputTensor2);
   TfLiteEvalTensor* output =
-      tflite::micro::GetEvalOutput(context, node, kOutputTensor);
+      tflite::micro::GetEvalOutput(context, node, kLogicalOutputTensor);
 
-  if (tflite::micro::HaveSameShapes(input1, input2)) {
-#if defined(HIFI5) || defined(FUSION_F1)
-    int err;
-    const int8_t *input1_data_ptr, *input2_data_ptr;
-    int8_t *output_data_ptr;
-    RuntimeShape input1_shape = tflite::micro::GetTensorShape(input1);
-    RuntimeShape input2_shape = tflite::micro::GetTensorShape(input2);
-    RuntimeShape output_shape = tflite::micro::GetTensorShape(output);
-    const int flat_size = MatchingFlatSize(input1_shape, input2_shape, output_shape);
+  int err;
+  const int8_t *input1_data_ptr, *input2_data_ptr;
+  int8_t *output_data_ptr;
+  RuntimeShape input1_shape = tflite::micro::GetTensorShape(input1);
+  RuntimeShape input2_shape = tflite::micro::GetTensorShape(input2);
+  RuntimeShape output_shape = tflite::micro::GetTensorShape(output);
+  const int flat_size = MatchingFlatSize(input1_shape, input2_shape, output_shape);
 
-    input1_data_ptr  = tflite::micro::GetTensorData<int8_t>(input1);
-    input2_data_ptr  = tflite::micro::GetTensorData<int8_t>(input2);
-    output_data_ptr  = tflite::micro::GetTensorData<int8_t>(output);
+  input1_data_ptr  = tflite::micro::GetTensorData<int8_t>(input1);
+  input2_data_ptr  = tflite::micro::GetTensorData<int8_t>(input2);
+  output_data_ptr  = tflite::micro::GetTensorData<int8_t>(output);
 
-    if (func == LogicalAnd) {
-      err = xa_nn_elm_logicaland_boolxbool_bool(
-          output_data_ptr,
-          input1_data_ptr,
-          input2_data_ptr,
-          flat_size);
-      TF_LITE_ENSURE(context, err == 0);
-    } else if (func == LogicalOr) {
-      err = xa_nn_elm_logicalor_boolxbool_bool(
-          output_data_ptr,
-          input1_data_ptr,
-          input2_data_ptr,
-          flat_size);
-      TF_LITE_ENSURE(context, err == 0);
-    } else {
-      err = 1;
-      TF_LITE_ENSURE(context, err == 0);
-    }
-#else
-    reference_ops::BinaryFunction<bool, bool, bool>(
-        tflite::micro::GetTensorShape(input1),
-        tflite::micro::GetTensorData<bool>(input1),
-        tflite::micro::GetTensorShape(input2),
-        tflite::micro::GetTensorData<bool>(input2),
-        tflite::micro::GetTensorShape(output),
-        tflite::micro::GetTensorData<bool>(output), func);
-#endif // defined(HIFI5) || defined(FUSION_F1)
+  if (func == LogicalAnd) {
+    err = xa_nn_elm_logicaland_boolxbool_bool(
+        output_data_ptr,
+        input1_data_ptr,
+        input2_data_ptr,
+        flat_size);
+    TF_LITE_ENSURE(context, err == 0);
+  } else if (func == LogicalOr) {
+    err = xa_nn_elm_logicalor_boolxbool_bool(
+        output_data_ptr,
+        input1_data_ptr,
+        input2_data_ptr,
+        flat_size);
+    TF_LITE_ENSURE(context, err == 0);
   } else {
-    reference_ops::BroadcastBinaryFunction4DSlow<bool, bool, bool>(
-        tflite::micro::GetTensorShape(input1),
-        tflite::micro::GetTensorData<bool>(input1),
-        tflite::micro::GetTensorShape(input2),
-        tflite::micro::GetTensorData<bool>(input2),
-        tflite::micro::GetTensorShape(output),
-        tflite::micro::GetTensorData<bool>(output), func);
+    err = 1;
+    TF_LITE_ENSURE(context, err == 0);
   }
-
   return kTfLiteOk;
 }
 
 TfLiteStatus LogicalOrEval(TfLiteContext* context, TfLiteNode* node) {
+#if defined(HIFI5) || defined(HIFI4)
+  const TfLiteEvalTensor* input1 =
+      tflite::micro::GetEvalInput(context, node, kLogicalInputTensor1);
+  const TfLiteEvalTensor* input2 =
+      tflite::micro::GetEvalInput(context, node, kLogicalInputTensor2);
+  
+  if (tflite::micro::HaveSameShapes(input1, input2))
+    return HiFiLogicalImpl(context, node, LogicalOr);
+  else
+    return LogicalImpl(context, node, LogicalOr);
+#else
   return LogicalImpl(context, node, LogicalOr);
+#endif
 }
 
 TfLiteStatus LogicalAndEval(TfLiteContext* context, TfLiteNode* node) {
+#if defined(HIFI5) || defined(HIFI4)
+  const TfLiteEvalTensor* input1 =
+      tflite::micro::GetEvalInput(context, node, kLogicalInputTensor1);
+  const TfLiteEvalTensor* input2 =
+      tflite::micro::GetEvalInput(context, node, kLogicalInputTensor2);
+  
+  if (tflite::micro::HaveSameShapes(input1, input2))
+    return HiFiLogicalImpl(context, node, LogicalAnd);
+  else
+    return LogicalImpl(context, node, LogicalAnd);
+#else
   return LogicalImpl(context, node, LogicalAnd);
+#endif
 }
 
 }  // namespace
-}  // namespace logical
 
 TfLiteRegistration Register_LOGICAL_OR() {
-  // Init, Free, Prepare, Eval are satisfying the Interface required by
-  // TfLiteRegistration.
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/nullptr,
-          /*invoke=*/logical::LogicalOrEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(nullptr, nullptr, LogicalOrEval);
 }
 
 TfLiteRegistration Register_LOGICAL_AND() {
-  // Init, Free, Prepare, Eval are satisfying the Interface required by
-  // TfLiteRegistration.
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/nullptr,
-          /*invoke=*/logical::LogicalAndEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(nullptr, nullptr, LogicalAndEval);
 }
 
-}  // namespace micro
-}  // namespace ops
 }  // namespace tflite

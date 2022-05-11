@@ -68,7 +68,7 @@ struct MinimumOp {
 
 }  // namespace maximum_minimum
 
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
 namespace hifi {
 
 enum class basic_op {
@@ -122,7 +122,7 @@ int hifi::ExecElemKernel( hifi::basic_op elem_op, data_type *out_data,
 
   return err;
 }
-#endif // defined(HIFI5) || defined(FUSION_F1)
+#endif // defined(HIFI5) || defined(HIFI4)
 
 template <typename data_type, typename op_type>
 void TFLiteOperation(TfLiteContext* context, TfLiteNode* node,
@@ -137,7 +137,7 @@ void TFLiteOperation(TfLiteContext* context, TfLiteNode* node,
       op_type::template op<data_type>);
 }
 
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
 /*
  * Invoke element-wise kernels if the shapes match, else,
  * call hifi::MaximumMinimumBroadcast(...)
@@ -218,7 +218,7 @@ int hifi::MaximumMinimumBroadcast( const RuntimeShape& unextended_input1_shape, 
 
   CopyDimsToDesc(extended_output_shape, &output_desc);
 
-  if ( (extended_input1_shape != extended_output_shape) &&              // input 1 needs broadcast
+  if ( !(extended_input1_shape == extended_output_shape) &&              // input 1 needs broadcast
        (extended_input2_shape == extended_output_shape)     ) {
 
     err = xa_nn_broadcast_8_8(output_data, output_desc.extents,                       
@@ -229,7 +229,7 @@ int hifi::MaximumMinimumBroadcast( const RuntimeShape& unextended_input1_shape, 
                    extended_output_shape.FlatSize());
 
   } else if( (extended_input1_shape == extended_output_shape) &&
-             (extended_input2_shape != extended_output_shape)     ) {   // input 2 needs broadcast
+             !(extended_input2_shape == extended_output_shape)     ) {   // input 2 needs broadcast
 
     err = xa_nn_broadcast_8_8(output_data, output_desc.extents,                        
             input2_data, extended_input2_shape.DimsData(), NDims);      // broadcast input 2 into output_data buffer
@@ -264,7 +264,7 @@ int hifi::MaximumMinimumBroadcast( const RuntimeShape& unextended_input1_shape, 
   return err;
 }
 
-#endif // defined(HIFI5) || defined(FUSION_F1)
+#endif // defined(HIFI5) || defined(HIFI4)
 
 template <KernelType kernel_type, typename OpType>
 TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
@@ -272,7 +272,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
   if (kernel_type == kReference || kernel_type == kHiFi5) {
 
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
     hifi::basic_op operation =
         std::is_same<OpType, MinimumOp>::value ? hifi::basic_op::min :
             std::is_same<OpType, MaximumOp>::value ? hifi::basic_op::max :
@@ -283,11 +283,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       case kTfLiteFloat32:
         TFLiteOperation<float, OpType>(context, node, op_context);
         break;
-      case kTfLiteUInt8:
-        TFLiteOperation<uint8_t, OpType>(context, node, op_context);
-        break;
       case kTfLiteInt8:
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
         hifi::TFLiteOperation<int8_t>(context, node, op_context, operation);
 #else
         TFLiteOperation<int8_t, OpType>(context, node, op_context);
@@ -317,39 +314,29 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace maximum_minimum
 
 TfLiteRegistration Register_MAXIMUM() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/nullptr,
-          /*invoke=*/
-#if defined(HIFI5) || defined(FUSION_F1)
+  return tflite::micro::RegisterOp(
+      nullptr, nullptr,
+#if defined(HIFI5) || defined(HIFI4)
           maximum_minimum::Eval<maximum_minimum::kHiFi5,
-                                maximum_minimum::MaximumOp>,
+                                maximum_minimum::MaximumOp>
 #else
           maximum_minimum::Eval<maximum_minimum::kReference,
-                                maximum_minimum::MaximumOp>,
+                                maximum_minimum::MaximumOp>
 #endif
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  );                                
 }
 
 TfLiteRegistration Register_MINIMUM() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/nullptr,
-          /*invoke=*/
-#if defined(HIFI5) || defined(FUSION_F1)
+  return tflite::micro::RegisterOp(
+      nullptr, nullptr,
+#if defined(HIFI5) || defined(HIFI4)
           maximum_minimum::Eval<maximum_minimum::kHiFi5,
-                                maximum_minimum::MinimumOp>,
+                                maximum_minimum::MinimumOp>
 #else
           maximum_minimum::Eval<maximum_minimum::kReference,
-                                maximum_minimum::MinimumOp>,
+                                maximum_minimum::MinimumOp>
 #endif
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  );                                
 }
 
 }  // namespace micro

@@ -36,7 +36,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   switch (input->type) {
     // TODO(wangtz): handle for kTfLiteInt8
     case kTfLiteFloat32: {
-#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#if HIFI_VFPU && (defined(HIFI5) || defined(HIFI4))
       const int flat_size = MatchingFlatSize(tflite::micro::GetTensorShape(input), tflite::micro::GetTensorShape(output));
       const float* in_data = tflite::micro::GetTensorData<float>(input);
       float* out_data = tflite::micro::GetTensorData<float>(output);
@@ -52,7 +52,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                             tflite::micro::GetTensorData<float>(input),
                             tflite::micro::GetTensorShape(output),
                             tflite::micro::GetTensorData<float>(output));
-#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#endif // HIFI_VFPU && (defined(HIFI5) || defined(HIFI4))
     }break;
     default:
       TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
@@ -65,14 +65,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace neg
 
 TfLiteRegistration Register_NEG() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/nullptr,
-          /*invoke=*/neg::Eval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(nullptr, nullptr, neg::Eval);
 }
 
 }  // namespace micro
