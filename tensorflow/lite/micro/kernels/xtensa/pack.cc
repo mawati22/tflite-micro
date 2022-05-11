@@ -63,11 +63,11 @@ TfLiteStatus PackImpl(TfLiteContext* context, TfLiteNode* node,
       const T* input_ptr = input_data + copy_size * k;
       int loc = k * values_count * copy_size + i * copy_size;
       T* output_ptr = output_data + loc;
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
       memcpy(output_ptr, input_ptr, copy_size*sizeof(T));
 #else
       for (int j = 0; j < copy_size; ++j) output_ptr[j] = input_ptr[j];
-#endif // defined(HIFI5) || defined(FUSION_F1)
+#endif // defined(HIFI5) || defined(HIFI4)
     }
   }
 
@@ -85,10 +85,6 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
     case kTfLiteFloat32: {
       return PackImpl<float>(context, node, output, data->values_count,
                              data->axis);
-    }
-    case kTfLiteUInt8: {
-      return PackImpl<uint8_t>(context, node, output, data->values_count,
-                               data->axis);
     }
     case kTfLiteInt8: {
       return PackImpl<int8_t>(context, node, output, data->values_count,
@@ -116,14 +112,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace pack
 
 TfLiteRegistration Register_PACK() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/nullptr,
-          /*invoke=*/pack::Eval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(nullptr, nullptr, pack::Eval);
 }
 
 }  // namespace micro
