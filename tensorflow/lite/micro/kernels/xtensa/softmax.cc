@@ -65,10 +65,6 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
     return XtensaEvalSoftmaxInt8Int16(context, node);
   }
 
-  if (input->type == kTfLiteInt8 && output->type == kTfLiteInt8) {
-    return XtensaEvalSoftmaxInt8Int8(context, node);
-  }
-
   TFLITE_DCHECK(node->user_data != nullptr);
 
 #if defined(HIFI4) || defined(HIFI4_INTERNAL) || defined(HIFI5)

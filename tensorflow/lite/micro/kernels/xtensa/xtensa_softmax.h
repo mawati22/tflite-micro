@@ -37,9 +37,6 @@ TfLiteStatus XtensaPrepareSoftmax(TfLiteContext* context, TfLiteNode* node);
 TfLiteStatus XtensaEvalSoftmaxInt8Int16(TfLiteContext* context,
                                         TfLiteNode* node);
 
-TfLiteStatus XtensaEvalSoftmaxInt8Int8(TfLiteContext* context,
-                                        TfLiteNode* node);
-
 }  // namespace tflite
 
 #endif  // TENSORFLOW_LITE_MICRO_KERNELS_XTENSA_XTENSA_SOFTMAX_H_
