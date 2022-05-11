@@ -105,31 +105,18 @@ TfLiteStatus EqualEval(TfLiteContext* context, TfLiteNode* node) {
                 tflite::micro::GetTensorData<int64_t>(input2), output_shape,
                 output_data);
       break;
-    case kTfLiteUInt8:
-      requires_broadcast
-          ? reference_ops::Broadcast4DSlowEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data)
-          : reference_ops::EqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data);
-      break;
     case kTfLiteInt8:
       if(requires_broadcast)
       {
         reference_ops::Broadcast4DSlowEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
       }
       else
       {
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
         int err;
         const int8_t *input1_data_ptr, *input2_data_ptr;
         int8_t *output_data_ptr;
@@ -153,11 +140,11 @@ TfLiteStatus EqualEval(TfLiteContext* context, TfLiteNode* node) {
         TF_LITE_ENSURE(context, err == 0);
 #else
         reference_ops::EqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
-#endif // defined(HIFI5) || defined(FUSION_F1)
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
+#endif // defined(HIFI5) || defined(HIFI4)
       }
       break;
     default:
@@ -239,31 +226,18 @@ TfLiteStatus NotEqualEval(TfLiteContext* context, TfLiteNode* node) {
                 tflite::micro::GetTensorData<int64_t>(input2), output_shape,
                 output_data);
       break;
-    case kTfLiteUInt8:
-      requires_broadcast
-          ? reference_ops::Broadcast4DSlowNotEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data)
-          : reference_ops::NotEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data);
-      break;
     case kTfLiteInt8:
       if(requires_broadcast)
       {
         reference_ops::Broadcast4DSlowNotEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
       }
       else
       {
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
         int err;
         const int8_t *input1_data_ptr, *input2_data_ptr;
         int8_t *output_data_ptr;
@@ -274,26 +248,25 @@ TfLiteStatus NotEqualEval(TfLiteContext* context, TfLiteNode* node) {
         output_data_ptr  = tflite::micro::GetTensorData<int8_t>(output);
 
         err = xa_nn_elm_notequal_asym8sxasym8s(output_data_ptr,
-                                               input1_data_ptr,
-                                               data->params.input1_offset,
-                                               data->params.input1_shift,
-                                               data->params.input1_multiplier,
-                                               input2_data_ptr,
-                                               data->params.input2_offset,
-                                               data->params.input2_shift,
-                                               data->params.input2_multiplier,
-                                               data->params.left_shift,
-                                               flat_size);
+                                            input1_data_ptr,
+                                            data->params.input1_offset,
+                                            data->params.input1_shift,
+                                            data->params.input1_multiplier,
+                                            input2_data_ptr,
+                                            data->params.input2_offset,
+                                            data->params.input2_shift,
+                                            data->params.input2_multiplier,
+                                            data->params.left_shift,
+                                            flat_size);
         TF_LITE_ENSURE(context, err == 0);
 #else
         reference_ops::NotEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
-#endif // defined(HIFI5) || defined(FUSION_F1)
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
+#endif // defined(HIFI5) || defined(HIFI4)
       }
-
       break;
     default:
       TF_LITE_KERNEL_LOG(context, "Type %s (%d) not supported.",
@@ -360,31 +333,18 @@ TfLiteStatus GreaterEval(TfLiteContext* context, TfLiteNode* node) {
                 tflite::micro::GetTensorData<int64_t>(input2), output_shape,
                 output_data);
       break;
-    case kTfLiteUInt8:
-      requires_broadcast
-          ? reference_ops::Broadcast4DSlowGreaterWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data)
-          : reference_ops::GreaterWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data);
-      break;
     case kTfLiteInt8:
       if(requires_broadcast)
       {
         reference_ops::Broadcast4DSlowGreaterWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
       }
       else
       {
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
         int err;
         const int8_t *input1_data_ptr, *input2_data_ptr;
         int8_t *output_data_ptr;
@@ -395,24 +355,24 @@ TfLiteStatus GreaterEval(TfLiteContext* context, TfLiteNode* node) {
         output_data_ptr  = tflite::micro::GetTensorData<int8_t>(output);
 
         err = xa_nn_elm_greater_asym8sxasym8s(output_data_ptr,
-                                              input1_data_ptr,
-                                              data->params.input1_offset,
-                                              data->params.input1_shift,
-                                              data->params.input1_multiplier,
-                                              input2_data_ptr,
-                                              data->params.input2_offset,
-                                              data->params.input2_shift,
-                                              data->params.input2_multiplier,
-                                              data->params.left_shift,
-                                              flat_size);
+                                            input1_data_ptr,
+                                            data->params.input1_offset,
+                                            data->params.input1_shift,
+                                            data->params.input1_multiplier,
+                                            input2_data_ptr,
+                                            data->params.input2_offset,
+                                            data->params.input2_shift,
+                                            data->params.input2_multiplier,
+                                            data->params.left_shift,
+                                            flat_size);
         TF_LITE_ENSURE(context, err == 0);
 #else
         reference_ops::GreaterWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
-#endif // defined(HIFI5) || defined(FUSION_F1)
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
+#endif // defined(HIFI5) || defined(HIFI4)
       }
       break;
     default:
@@ -480,31 +440,18 @@ TfLiteStatus GreaterEqualEval(TfLiteContext* context, TfLiteNode* node) {
                 tflite::micro::GetTensorData<int64_t>(input2), output_shape,
                 output_data);
       break;
-    case kTfLiteUInt8:
-      requires_broadcast
-          ? reference_ops::Broadcast4DSlowGreaterEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data)
-          : reference_ops::GreaterEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data);
-      break;
     case kTfLiteInt8:
       if(requires_broadcast)
       {
         reference_ops::Broadcast4DSlowGreaterEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
       }
       else
       {
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
         int err;
         const int8_t *input1_data_ptr, *input2_data_ptr;
         int8_t *output_data_ptr;
@@ -528,11 +475,11 @@ TfLiteStatus GreaterEqualEval(TfLiteContext* context, TfLiteNode* node) {
         TF_LITE_ENSURE(context, err == 0);
 #else
         reference_ops::GreaterEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
-#endif // defined(HIFI5) || defined(FUSION_F1)
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
+#endif // defined(HIFI5) || defined(HIFI4)
       }
       break;
     default:
@@ -600,31 +547,18 @@ TfLiteStatus LessEval(TfLiteContext* context, TfLiteNode* node) {
                 tflite::micro::GetTensorData<int64_t>(input2), output_shape,
                 output_data);
       break;
-    case kTfLiteUInt8:
-      requires_broadcast
-          ? reference_ops::Broadcast4DSlowLessWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data)
-          : reference_ops::LessWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data);
-      break;
     case kTfLiteInt8:
       if(requires_broadcast)
       {
         reference_ops::Broadcast4DSlowLessWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
       }
       else
       {
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
         int err;
         const int8_t *input1_data_ptr, *input2_data_ptr;
         int8_t *output_data_ptr;
@@ -648,11 +582,11 @@ TfLiteStatus LessEval(TfLiteContext* context, TfLiteNode* node) {
         TF_LITE_ENSURE(context, err == 0);
 #else
         reference_ops::LessWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
-#endif // defined(HIFI5) || defined(FUSION_F1)
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
+#endif // defined(HIFI5) || defined(HIFI4)
       }
       break;
     default:
@@ -720,31 +654,18 @@ TfLiteStatus LessEqualEval(TfLiteContext* context, TfLiteNode* node) {
                 tflite::micro::GetTensorData<int64_t>(input2), output_shape,
                 output_data);
       break;
-    case kTfLiteUInt8:
-      requires_broadcast
-          ? reference_ops::Broadcast4DSlowLessEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data)
-          : reference_ops::LessEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<uint8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<uint8_t>(input2), output_shape,
-                output_data);
-      break;
     case kTfLiteInt8:
       if(requires_broadcast)
       {
         reference_ops::Broadcast4DSlowLessEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
       }
       else
       {
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
         int err;
         const int8_t *input1_data_ptr, *input2_data_ptr;
         int8_t *output_data_ptr;
@@ -755,24 +676,24 @@ TfLiteStatus LessEqualEval(TfLiteContext* context, TfLiteNode* node) {
         output_data_ptr  = tflite::micro::GetTensorData<int8_t>(output);
 
         err = xa_nn_elm_lessequal_asym8sxasym8s(output_data_ptr,
-                                                input1_data_ptr,
-                                                data->params.input1_offset,
-                                                data->params.input1_shift,
-                                                data->params.input1_multiplier,
-                                                input2_data_ptr,
-                                                data->params.input2_offset,
-                                                data->params.input2_shift,
-                                                data->params.input2_multiplier,
-                                                data->params.left_shift,
-                                                flat_size);
+                                            input1_data_ptr,
+                                            data->params.input1_offset,
+                                            data->params.input1_shift,
+                                            data->params.input1_multiplier,
+                                            input2_data_ptr,
+                                            data->params.input2_offset,
+                                            data->params.input2_shift,
+                                            data->params.input2_multiplier,
+                                            data->params.left_shift,
+                                            flat_size);
         TF_LITE_ENSURE(context, err == 0);
 #else
         reference_ops::LessEqualWithScaling(
-                data->params, input1_shape,
-                tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
-                tflite::micro::GetTensorData<int8_t>(input2), output_shape,
-                output_data);
-#endif // defined(HIFI5) || defined(FUSION_F1)
+            data->params, input1_shape,
+            tflite::micro::GetTensorData<int8_t>(input1), input2_shape,
+            tflite::micro::GetTensorData<int8_t>(input2), output_shape,
+            output_data);
+#endif // defined(HIFI5) || defined(HIFI4)
       }
       break;
     default:
@@ -794,12 +715,16 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TFLITE_DCHECK(node->user_data != nullptr);
   OpData* data = static_cast<OpData*>(node->user_data);
 
-  const TfLiteTensor* input1 = GetInput(context, node, kInputTensor1);
+  MicroContext* micro_context = GetMicroContext(context);
+
+  TfLiteTensor* input1 =
+      micro_context->AllocateTempInputTensor(node, kInputTensor1);
   TF_LITE_ENSURE(context, input1 != nullptr);
-  const TfLiteTensor* input2 = GetInput(context, node, kInputTensor2);
+  TfLiteTensor* input2 =
+      micro_context->AllocateTempInputTensor(node, kInputTensor2);
   TF_LITE_ENSURE(context, input2 != nullptr);
 
-  if (input1->type == kTfLiteUInt8 || input1->type == kTfLiteInt8) {
+  if (input1->type == kTfLiteInt8) {
     auto input1_offset = -input1->params.zero_point;
     auto input2_offset = -input2->params.zero_point;
     const int kLeftShift = 8;
@@ -824,75 +749,42 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
     data->params.input2_shift = input2_shift;
   }
 
+  micro_context->DeallocateTempTfLiteTensor(input1);
+  micro_context->DeallocateTempTfLiteTensor(input2);
+
   return kTfLiteOk;
 }
 
 }  // namespace comparisons
 
 TfLiteRegistration Register_EQUAL() {
-  return {/*init=*/comparisons::Init,
-          /*free=*/nullptr,
-          /*prepare=*/comparisons::Prepare,
-          /*invoke=*/comparisons::EqualEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(comparisons::Init, comparisons::Prepare,
+                                   comparisons::EqualEval);
 }
 
 TfLiteRegistration Register_NOT_EQUAL() {
-  return {/*init=*/comparisons::Init,
-          /*free=*/nullptr,
-          /*prepare=*/comparisons::Prepare,
-          /*invoke=*/comparisons::NotEqualEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(comparisons::Init, comparisons::Prepare,
+                                   comparisons::NotEqualEval);
 }
 
 TfLiteRegistration Register_GREATER() {
-  return {/*init=*/comparisons::Init,
-          /*free=*/nullptr,
-          /*prepare=*/comparisons::Prepare,
-          /*invoke=*/comparisons::GreaterEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(comparisons::Init, comparisons::Prepare,
+                                   comparisons::GreaterEval);
 }
 
 TfLiteRegistration Register_GREATER_EQUAL() {
-  return {/*init=*/comparisons::Init,
-          /*free=*/nullptr,
-          /*prepare=*/comparisons::Prepare,
-          /*invoke=*/comparisons::GreaterEqualEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(comparisons::Init, comparisons::Prepare,
+                                   comparisons::GreaterEqualEval);
 }
 
 TfLiteRegistration Register_LESS() {
-  return {/*init=*/comparisons::Init,
-          /*free=*/nullptr,
-          /*prepare=*/comparisons::Prepare,
-          /*invoke=*/comparisons::LessEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(comparisons::Init, comparisons::Prepare,
+                                   comparisons::LessEval);
 }
 
 TfLiteRegistration Register_LESS_EQUAL() {
-  return {/*init=*/comparisons::Init,
-          /*free=*/nullptr,
-          /*prepare=*/comparisons::Prepare,
-          /*invoke=*/comparisons::LessEqualEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(comparisons::Init, comparisons::Prepare,
+                                   comparisons::LessEqualEval);
 }
 
 }  // namespace micro

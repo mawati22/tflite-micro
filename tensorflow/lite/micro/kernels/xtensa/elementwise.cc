@@ -1,4 +1,4 @@
-/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ namespace micro {
 namespace elementwise {
 namespace hifi {
 
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
 inline TfLiteStatus EvalLogicalNot(TfLiteContext* context, TfLiteNode* node) {
     const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
     TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
@@ -47,7 +47,7 @@ inline TfLiteStatus EvalLogicalNot(TfLiteContext* context, TfLiteNode* node) {
     TF_LITE_ENSURE(context, err==0);
     return kTfLiteOk;
   }
-#endif // defined(HIFI5) || defined(FUSION_F1)
+#endif // defined(HIFI5) || defined(HIFI4)
 
 } //namespae hifi
 
@@ -64,11 +64,13 @@ bool IsLogicalSupportedType(const TfLiteType type) {
 typedef bool (*IsSupportedType)(TfLiteType);
 template <IsSupportedType>
 TfLiteStatus GenericPrepare(TfLiteContext* context, TfLiteNode* node) {
+  MicroContext* micro_context = GetMicroContext(context);
+
   TF_LITE_ENSURE_EQ(context, NumInputs(node), 1);
   TF_LITE_ENSURE_EQ(context, NumOutputs(node), 1);
-  const TfLiteTensor* input = GetInput(context, node, 0);
+  TfLiteTensor* input = micro_context->AllocateTempInputTensor(node, 0);
   TF_LITE_ENSURE(context, input != nullptr);
-  TfLiteTensor* output = GetOutput(context, node, 0);
+  TfLiteTensor* output = micro_context->AllocateTempOutputTensor(node, 0);
   TF_LITE_ENSURE(context, output != nullptr);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, output->type);
   if (!IsSupportedType(input->type)) {
@@ -76,6 +78,9 @@ TfLiteStatus GenericPrepare(TfLiteContext* context, TfLiteNode* node) {
                        TfLiteTypeGetName(input->type), input->type);
     return kTfLiteError;
   }
+
+  micro_context->DeallocateTempTfLiteTensor(input);
+  micro_context->DeallocateTempTfLiteTensor(output);
   return kTfLiteOk;
 }
 
@@ -94,22 +99,22 @@ inline TfLiteStatus EvalImpl(TfLiteContext* context, TfLiteNode* node,
   return kTfLiteOk;
 }
 
-#if (!HIFI_VFPU) || (!(defined(HIFI5) || defined(FUSION_F1)))
+#if (!HIFI_VFPU)
 inline TfLiteStatus EvalNumeric(TfLiteContext* context, TfLiteNode* node,
                                 float float_func(float)) {
   return EvalImpl<float>(context, node, float_func, kTfLiteFloat32);
 }
-#endif // (!HIFI_VFPU) || (!(defined(HIFI5) || defined(FUSION_F1)))
+#endif // (!HIFI_VFPU)
 
-#if !(defined(HIFI5) || defined(FUSION_F1))
+#if !(defined(HIFI5) || defined(HIFI4))
 inline TfLiteStatus EvalLogical(TfLiteContext* context, TfLiteNode* node,
                                 bool bool_func(bool)) {
   return EvalImpl<bool>(context, node, bool_func, kTfLiteBool);
 }
-#endif // !(defined(HIFI5) || defined(FUSION_F1))
+#endif // !(defined(HIFI5) || defined(HIFI4))
 
 TfLiteStatus AbsEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#if HIFI_VFPU
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -127,11 +132,11 @@ TfLiteStatus AbsEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::abs);
-#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#endif // HIFI_VFPU
 }
 
 TfLiteStatus SinEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#if HIFI_VFPU
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -149,11 +154,11 @@ TfLiteStatus SinEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::sin);
-#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#endif // HIFI_VFPU
 }
 
 TfLiteStatus CosEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#if HIFI_VFPU
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -171,11 +176,11 @@ TfLiteStatus CosEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::cos);
-#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#endif // HIFI_VFPU
 }
 
 TfLiteStatus LogEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#if HIFI_VFPU
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -193,11 +198,11 @@ TfLiteStatus LogEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::log);
-#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#endif // HIFI_VFPU
 }
 
 TfLiteStatus SqrtEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#if HIFI_VFPU
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -215,11 +220,11 @@ TfLiteStatus SqrtEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, std::sqrt);
-#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#endif // HIFI_VFPU
 }
 
 TfLiteStatus RsqrtEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#if HIFI_VFPU
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -237,11 +242,11 @@ TfLiteStatus RsqrtEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, [](float f) { return 1.f / std::sqrt(f); });
-#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#endif // HIFI_VFPU
 }
 
 TfLiteStatus SquareEval(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#if HIFI_VFPU
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
@@ -259,114 +264,66 @@ TfLiteStatus SquareEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalNumeric(context, node, [](float f) { return f * f; });
-#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#endif // HIFI_VFPU
 }
 
 TfLiteStatus LogicalNotEval(TfLiteContext* context, TfLiteNode* node) {
-#if defined(HIFI5) || defined(FUSION_F1)
+#if defined(HIFI5) || defined(HIFI4)
   return hifi::EvalLogicalNot(context, node);
 #else
   return EvalLogical(context, node, [](bool v) { return !v; });
-#endif // defined(HIFI5) || defined(FUSION_F1)
+#endif // defined(HIFI5) || defined(HIFI4)
 }
 
 }  // namespace
 }  // namespace elementwise
 
 TfLiteRegistration Register_ABS() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/
-          elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
-          /*invoke=*/elementwise::AbsEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(
+      nullptr, elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
+      elementwise::AbsEval);
 }
 
 TfLiteRegistration Register_SIN() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/
-          elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
-          /*invoke=*/elementwise::SinEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(
+      nullptr, elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
+      elementwise::SinEval);
 }
 
 TfLiteRegistration Register_COS() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/
-          elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
-          /*invoke=*/elementwise::CosEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(
+      nullptr, elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
+      elementwise::CosEval);
 }
 
 TfLiteRegistration Register_LOG() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/
-          elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
-          /*invoke=*/elementwise::LogEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(
+      nullptr, elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
+      elementwise::LogEval);
 }
 
 TfLiteRegistration Register_SQRT() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/
-          elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
-          /*invoke=*/elementwise::SqrtEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(
+      nullptr, elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
+      elementwise::SqrtEval);
 }
 
 TfLiteRegistration Register_RSQRT() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/
-          elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
-          /*invoke=*/elementwise::RsqrtEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(
+      nullptr, elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
+      elementwise::RsqrtEval);
 }
 
 TfLiteRegistration Register_SQUARE() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/
-          elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
-          /*invoke=*/elementwise::SquareEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(
+      nullptr, elementwise::GenericPrepare<elementwise::IsNumericSupportedType>,
+      elementwise::SquareEval);
 }
 
 TfLiteRegistration Register_LOGICAL_NOT() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/
-          elementwise::GenericPrepare<elementwise::IsLogicalSupportedType>,
-          /*invoke=*/elementwise::LogicalNotEval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(
+      nullptr, elementwise::GenericPrepare<elementwise::IsLogicalSupportedType>,
+      elementwise::LogicalNotEval);
 }
 
 }  // namespace micro

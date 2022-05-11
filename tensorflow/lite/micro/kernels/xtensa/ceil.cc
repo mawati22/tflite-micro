@@ -1,4 +1,4 @@
-/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,9 +30,13 @@ constexpr int kInputTensor = 0;
 constexpr int kOutputTensor = 0;
 
 TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
-  const TfLiteTensor* input = GetInput(context, node, kInputTensor);
+  MicroContext* micro_context = GetMicroContext(context);
+
+  TfLiteTensor* input =
+      micro_context->AllocateTempInputTensor(node, kInputTensor);
   TF_LITE_ENSURE(context, input != nullptr);
-  TfLiteTensor* output = GetOutput(context, node, kOutputTensor);
+  TfLiteTensor* output =
+      micro_context->AllocateTempOutputTensor(node, kOutputTensor);
   TF_LITE_ENSURE(context, output != nullptr);
   TF_LITE_ENSURE_EQ(context, NumInputs(node), 1);
   TF_LITE_ENSURE_EQ(context, NumOutputs(node), 1);
@@ -43,6 +47,8 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   for (int i = 0; i < output->dims->size; ++i) {
     TF_LITE_ENSURE_EQ(context, output->dims->data[i], input->dims->data[i]);
   }
+  micro_context->DeallocateTempTfLiteTensor(input);
+  micro_context->DeallocateTempTfLiteTensor(output);
   return kTfLiteOk;
 }
 
@@ -52,7 +58,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   TfLiteEvalTensor* output =
       tflite::micro::GetEvalOutput(context, node, kOutputTensor);
 
-#if HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#if HIFI_VFPU 
   const int flat_size = MatchingFlatSize(tflite::micro::GetTensorShape(input), tflite::micro::GetTensorShape(output));
   const float* in_data = tflite::micro::GetTensorData<float>(input);
   float* out_data = tflite::micro::GetTensorData<float>(output);
@@ -68,20 +74,14 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                       tflite::micro::GetTensorData<float>(input),
                       tflite::micro::GetTensorShape(output),
                       tflite::micro::GetTensorData<float>(output));
-#endif // HIFI_VFPU && (defined(HIFI5) || defined(FUSION_F1))
+#endif // HIFI_VFPU
+
   return kTfLiteOk;
 }
 }  // namespace ceil
 
 TfLiteRegistration Register_CEIL() {
-  return {/*init=*/nullptr,
-          /*free=*/nullptr,
-          /*prepare=*/ceil::Prepare,
-          /*invoke=*/ceil::Eval,
-          /*profiling_string=*/nullptr,
-          /*builtin_code=*/0,
-          /*custom_name=*/nullptr,
-          /*version=*/0};
+  return tflite::micro::RegisterOp(nullptr, ceil::Prepare, ceil::Eval);
 }
 
 }  // namespace micro
