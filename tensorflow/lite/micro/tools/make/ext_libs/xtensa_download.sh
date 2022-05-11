@@ -49,7 +49,7 @@ fi
 if [[ ${2} == "hifi4" ]]; then
   LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi4/raw/master/archive/xa_nnlib_hifi4_05_11_2022.zip"
   LIBRARY_DIRNAME="xa_nnlib_hifi4"
-  LIBRARY_MD5="ef2af712fffea59a728d0616ce151b36"
+  LIBRARY_MD5="fd04b31f3d07adee5eab7c3c07db3602"
 elif [[ ${2} == "hifi5" ]]; then
   LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi5/raw/master/archive/xa_nnlib_hifi5_02_01_2022.zip"
   LIBRARY_DIRNAME="xa_nnlib_hifi5"
