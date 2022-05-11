@@ -24,9 +24,6 @@ limitations under the License.
 namespace tflite {
 namespace {
 
-//extern bool LogicalOr(bool x, bool y);
-//extern bool LogicalAnd(bool x, bool y);
-
 // Input/output tensor index.
 extern const int kLogicalInputTensor1 = 0;
 extern const int kLogicalInputTensor2 = 1;
