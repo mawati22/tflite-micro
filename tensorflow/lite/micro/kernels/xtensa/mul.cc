@@ -139,7 +139,7 @@ TfLiteStatus MulEval(TfLiteContext* context, TfLiteNode* node) {
         EvalMulQuantizedReference(context, node, data, input1, input2, output);
       break;
     case kTfLiteFloat32:
-#if defined(HIFI5) || defined(HIFI4)
+#if HIFI_VFPU 
       if (!need_broadcast) 
         EvalMulFloatHiFi(context, node, params, data, input1, input2, output);
       else
