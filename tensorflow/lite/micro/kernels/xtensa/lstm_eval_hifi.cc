@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/micro/kernels/xtensa/lstm_eval.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
+#include <xtensa/tie/xt_hifi2.h>
 
 namespace tflite {
 namespace ops {

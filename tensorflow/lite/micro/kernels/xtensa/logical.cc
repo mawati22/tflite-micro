@@ -25,6 +25,7 @@ namespace tflite {
 namespace {
 
 // Input/output tensor index.
+#if defined(HIFI5) || defined(HIFI4)
 extern const int kLogicalInputTensor1 = 0;
 extern const int kLogicalInputTensor2 = 1;
 extern const int kLogicalOutputTensor = 0;
@@ -70,6 +71,7 @@ TfLiteStatus HiFiLogicalImpl(TfLiteContext* context, TfLiteNode* node,
   }
   return kTfLiteOk;
 }
+#endif
 
 TfLiteStatus LogicalOrEval(TfLiteContext* context, TfLiteNode* node) {
 #if defined(HIFI5) || defined(HIFI4)
