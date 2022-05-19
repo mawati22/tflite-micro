@@ -29,7 +29,7 @@ namespace {
 
 // TODO(b/230666079) enable below tests for xtensa when the xtensa
 // kernel is reconciled with reference kernel
-#if !defined(XTENSA)
+// #if defined(XTENSA) commenting the switch as the xtensa code is reconciled locally with reference.
 
 constexpr int kLstmMaxNumInputTensors = 24;
 constexpr int kLstmOutputTensorIndex = kLstmMaxNumInputTensors;
@@ -75,8 +75,9 @@ QuantizationParams SetQuantizationParams(float f_min, float f_max) {
   float scale = 0;
   const T qmin = std::numeric_limits<T>::min();
   const T qmax = std::numeric_limits<T>::max();
-  const float qmin_double = qmin;
-  const float qmax_double = qmax;
+  /* Explicitly typecasting to float to avoid xt-clang warnings */
+  const float qmin_double = (float)qmin;
+  const float qmax_double = (float)qmax;
   // 0 should always be a representable value. Let's assume that the initial
   // min,max range contains 0.
   TFLITE_DCHECK_LE(f_min, 0);
@@ -1268,7 +1269,7 @@ void TestUnidirectionalSequenceLstmInteger(LstmIntegerTestConfig* config) {
   }
 }
 
-#endif  // !defined(XTENSA)
+//#endif  // defined(XTENSA)
 }  // namespace
 }  // namespace testing
 }  // namespace tflite
@@ -1277,7 +1278,7 @@ TF_LITE_MICRO_TESTS_BEGIN
 
 // TODO(b/230666079) enable below tests for xtensa when the xtensa
 // kernel is reconciled with reference kernel
-#if !defined(XTENSA)
+// #if defined(XTENSA) commenting the switch as the xtensa code is reconciled locally with reference.
 
 TF_LITE_MICRO_TEST(UnidirectionalSequenceLstmIntegerNoPeepholeTest) {
   tflite::testing::TestUnidirectionalSequenceLstmInteger(
@@ -1428,6 +1429,6 @@ TF_LITE_MICRO_TEST(UndrctnlSqncLstmFloatCifgPphlNoPrjLayerNormTest) {
       /*input_output_batch_major=*/false);
 }
 
-#endif  // !defined(XTENSA)
+//#endif  // defined(XTENSA)
 
 TF_LITE_MICRO_TESTS_END
