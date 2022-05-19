@@ -75,9 +75,9 @@ QuantizationParams SetQuantizationParams(float f_min, float f_max) {
   float scale = 0;
   const T qmin = std::numeric_limits<T>::min();
   const T qmax = std::numeric_limits<T>::max();
-  /* Explicitly typecasting to float to avoid xt-clang warnings */
-  const float qmin_double = (float)qmin;
-  const float qmax_double = (float)qmax;
+  /* Explicitly typecasting to const float to avoid xt-clang warning/error */
+  const float qmin_double = (const float)qmin;
+  const float qmax_double = (const float)qmax;
   // 0 should always be a representable value. Let's assume that the initial
   // min,max range contains 0.
   TFLITE_DCHECK_LE(f_min, 0);
