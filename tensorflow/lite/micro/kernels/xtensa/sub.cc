@@ -96,6 +96,32 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorShape(output),
             tflite::micro::GetTensorData<int8_t>(output));
       } else {
+#if defined(HIFI4) || defined(HIFI5)
+        int err;
+        const RuntimeShape& input1_shape = tflite::micro::GetTensorShape(input1);
+        const RuntimeShape& input2_shape = tflite::micro::GetTensorShape(input2);
+        const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
+        const int flat_size = MatchingElementsSize(input1_shape, input2_shape, output_shape);
+
+        err = xa_nn_elm_sub_asym8sxasym8s_asym8s(tflite::micro::GetTensorData<int8_t>(output),
+                                              op_params.output_offset,
+                                              op_params.output_shift,
+                                              op_params.output_multiplier,
+                                              op_params.quantized_activation_min,
+                                              op_params.quantized_activation_max,
+                                              tflite::micro::GetTensorData<int8_t>(input1) ,
+                                              op_params.input1_offset,
+                                              op_params.input1_shift,
+                                              op_params.input1_multiplier,
+                                              tflite::micro::GetTensorData<int8_t>(input2),
+                                              op_params.input2_offset,
+                                              op_params.input2_shift,
+                                              op_params.input2_multiplier,
+                                              op_params.left_shift,
+                                              flat_size);
+
+        TF_LITE_ENSURE(context, err == 0);
+#else
         tflite::reference_ops::Sub(
             op_params, tflite::micro::GetTensorShape(input1),
             tflite::micro::GetTensorData<int8_t>(input1),
@@ -103,6 +129,7 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorData<int8_t>(input2),
             tflite::micro::GetTensorShape(output),
             tflite::micro::GetTensorData<int8_t>(output));
+#endif // defined(HIFI4) || defined(HIFI5)
       }
       break;
     }

@@ -179,6 +179,47 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       } else {
         pad_value = *tflite::micro::GetTensorData<int8_t>(constant_values);
       }
+#if defined(HIFI4) || defined(HIFI5)
+      if((input->dims->size <= 4))
+      {
+        int err;
+        const int8_t *input_data_ptr;
+        int8_t *output_data_ptr;
+
+        input_data_ptr  = tflite::micro::GetTensorData<int8_t>(input);
+        output_data_ptr = tflite::micro::GetTensorData<int8_t>(output);
+
+        const TfLiteEvalTensor* paddings = tflite::micro::GetEvalInput(context, node, /*index=*/1);
+        const int32_t* paddings_data_ptr = tflite::micro::GetTensorData<int32_t>(paddings);
+
+        err =  xa_nn_pad_8_8(output_data_ptr
+                            ,output->dims->data
+                            ,input_data_ptr
+                            ,input->dims->data
+                            ,paddings_data_ptr
+                            ,paddings->dims->data
+                            ,output->dims->size
+                            ,input->dims->size
+                            ,paddings->dims->size
+                            ,pad_value);
+        TF_LITE_ENSURE(context, (err==0) ); 
+      }
+      else
+      {
+        if (data->params.resizing_category == ResizingCategory::kImageStyle) {
+          reference_ops::PadImageStyle(
+              data->params, tflite::micro::GetTensorShape(input),
+              tflite::micro::GetTensorData<int8_t>(input), &pad_value,
+              tflite::micro::GetTensorShape(output),
+              tflite::micro::GetTensorData<int8_t>(output));
+        } else {
+          reference_ops::Pad(data->params, tflite::micro::GetTensorShape(input),
+                            tflite::micro::GetTensorData<int8_t>(input),
+                            &pad_value, tflite::micro::GetTensorShape(output),
+                            tflite::micro::GetTensorData<int8_t>(output));
+        }
+      }
+#else
       if (data->params.resizing_category == ResizingCategory::kImageStyle) {
         reference_ops::PadImageStyle(
             data->params, tflite::micro::GetTensorShape(input),
@@ -191,6 +232,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                            &pad_value, tflite::micro::GetTensorShape(output),
                            tflite::micro::GetTensorData<int8_t>(output));
       }
+#endif // defined(HIFI4) || defined(HIFI5)
     } break;
     case kTfLiteInt16: {
       int16_t pad_value =
