@@ -23,7 +23,7 @@ limitations under the License.
 
 namespace tflite {
 
-#if defined(HIFI5)
+#if defined(HIFI5) || defined(HIFI4)
 void calc_cell_state_without_cifg(int16_t* cell_state,
                                   const int16_t* forget_gate,
                                   const int16_t* cell_gate,
@@ -38,7 +38,7 @@ void xa_nn_elm_mul_16x16_asym8s(int8_t* output, const int16_t* input_1,
                                 const int16_t* input_2, int32_t multiplier,
                                 int32_t shift, int32_t zero_point,
                                 int num_elms);
-#endif  // defined(HIFI5)
+#endif  // defined(HIFI5) || defined(HIFI4)
 
 // Pamameters for integer LSTM.
 // Consider split this into two Integer Parameters if more fields are added.
