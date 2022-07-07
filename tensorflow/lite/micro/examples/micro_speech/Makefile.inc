@@ -218,6 +218,15 @@ $(GENERATED_SRCS_DIR)tensorflow/lite/micro/examples/micro_speech/testdata/no_30m
 $(GENERATED_SRCS_DIR)tensorflow/lite/micro/examples/micro_speech/testdata/yes_1000ms_audio_data.h \
 $(GENERATED_SRCS_DIR)tensorflow/lite/micro/examples/micro_speech/testdata/yes_30ms_audio_data.h
 
+DTLN_NOISE_SUPPRESSION_SRCS := \
+tensorflow/lite/micro/examples/micro_speech/dtln_noise_suppression_model_data.cc \
+tensorflow/lite/micro/examples/micro_speech/dtln_noise_suppression_preprocess.cc \
+tensorflow/lite/micro/examples/micro_speech/dtln_noise_suppression_test.cc
+
+DTLN_NOISE_SUPPRESSION_HDRS := \
+tensorflow/lite/micro/examples/micro_speech/dtln_noise_suppression_model_data.h \
+tensorflow/lite/micro/examples/micro_speech/dtln_noise_suppression.h
+
 #Find any platform - specific rules for this example.
 include $(wildcard tensorflow/lite/micro/examples/micro_speech/*/Makefile.inc)
 
@@ -230,6 +239,9 @@ $(eval $(call microlite_test,micro_features_generator_test,\
 $(MICRO_FEATURES_GENERATOR_TEST_SRCS),$(MICRO_FEATURES_GENERATOR_TEST_HDRS),$(MICRO_SPEECH_GENERATOR_INPUTS)))
 
 # Tests loading and running a speech model.
+$(eval $(call microlite_test,dtln_noise_suppression_test,\
+$(DTLN_NOISE_SUPPRESSION_SRCS),$(DTLN_NOISE_SUPPRESSION_HDRS)))
+
 $(eval $(call microlite_test,micro_speech_test,\
 $(MICRO_SPEECH_TEST_SRCS),$(MICRO_SPEECH_TEST_HDRS),$(MICRO_SPEECH_GENERATOR_INPUTS)))
 

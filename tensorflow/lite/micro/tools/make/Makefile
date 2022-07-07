@@ -139,8 +139,8 @@ CC_WARNINGS := \
   -Wstrict-aliasing \
   -Wno-unused-parameter
 
+#-Werror
 COMMON_FLAGS := \
-  -Werror \
   -fno-unwind-tables \
   -ffunction-sections \
   -fdata-sections \
