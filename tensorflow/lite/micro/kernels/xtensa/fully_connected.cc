@@ -26,6 +26,8 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 
+#define FC_FIX_3D_DATA     //Temporary fix for models with 3 dimentional output tensor
+
 namespace tflite {
 namespace {
 
@@ -87,7 +89,16 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   // int8 quantization.
   TFLITE_DCHECK(filter->params.zero_point == 0);
 
+  //Temporary fix for models with 3 dimentional output tensor
+#if defined(FC_FIX_3D_DATA)
+  if ( GetTensorShape(output).DimensionsCount() != 2 )
+  {
+    TFLITE_DCHECK(GetTensorShape(output).DimensionsCount() == 3);
+    TFLITE_DCHECK(GetTensorShape(output).Dims(1) == 1);
+  }
+#else
   TFLITE_DCHECK(GetTensorShape(output).DimensionsCount() == 2);
+#endif
 
   TF_LITE_ENSURE_OK(
       context, CalculateOpData(context, params->activation, input->type, input,
@@ -121,7 +132,12 @@ TfLiteStatus EvalQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
 #if defined(HIFI4) || defined(HIFI4_INTERNAL) || defined(HIFI5)
   const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
   const int num_batches = output_shape.Dims(0);
+  //Temporary fix for models with 3 dimentional output tensor
+#if defined(FC_FIX_3D_DATA)
+  const int output_depth = output_shape.Dims(output_shape.DimensionsCount()-1);
+#else
   const int output_depth = output_shape.Dims(1);
+#endif
 
   const RuntimeShape& filter_shape = tflite::micro::GetTensorShape(filter);
   const int filter_dim_count = filter_shape.DimensionsCount();
