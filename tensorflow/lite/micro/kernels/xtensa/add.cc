@@ -159,20 +159,32 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorShape(input2);
         const RuntimeShape& output_shape =
             tflite::micro::GetTensorShape(output);
-        const int flat_size =
-            MatchingElementsSize(input1_shape, input2_shape, output_shape);
 
-        err = xa_nn_elm_add_asym16sxasym16s_asym16s(
+	const int* inp1_shape = reinterpret_cast<const int*>(input1_shape.DimsData());
+	const int* inp2_shape = reinterpret_cast<const int*>(input2_shape.DimsData());
+	const int* op_shape = reinterpret_cast<const int*>(output_shape.DimsData());
+
+        int ii;
+        int inp1shape[4]={1, 1, 1, 1},inp2shape[4]={1, 1, 1, 1}, opshape[4]={1, 1, 1, 1};
+        for(ii=0; ii<input1_shape.DimensionsCount(); ii++){
+          inp1shape[ii] = inp1_shape[ii];
+          inp2shape[ii] = inp2_shape[ii];
+          opshape[ii] = op_shape[ii];
+        }
+        err = xa_nn_elm_add_broadcast_4D_asym16sxasym16s_asym16s(
             tflite::micro::GetTensorData<int16_t>(output),
+	    opshape,
             op_params.output_offset, op_params.output_shift,
             op_params.output_multiplier, op_params.quantized_activation_min,
             op_params.quantized_activation_max,
             tflite::micro::GetTensorData<int16_t>(input1),
+	    inp1shape,
             op_params.input1_offset, op_params.input1_shift,
             op_params.input1_multiplier,
             tflite::micro::GetTensorData<int16_t>(input2),
+	    inp2shape,
             op_params.input2_offset, op_params.input2_shift,
-            op_params.input2_multiplier, op_params.left_shift, flat_size);
+            op_params.input2_multiplier, op_params.left_shift);
 
         TF_LITE_ENSURE(context, err == 0);
 
