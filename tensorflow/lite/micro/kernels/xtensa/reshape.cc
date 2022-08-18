@@ -1,4 +1,4 @@
-/* Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ limitations under the License.
 #include "tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow/lite/kernels/op_macros.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
+#include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
+#include "tensorflow/lite/micro/kernels/xtensa/xtensa_reshape.h"
 #include "tensorflow/lite/micro/memory_helpers.h"
 #include "tensorflow/lite/micro/micro_utils.h"
 
@@ -29,17 +31,26 @@ namespace ops {
 namespace micro {
 namespace reshape {
 
-constexpr int kInputTensor = 0;
-constexpr int kOutputTensor = 0;
+#if defined(VISION_P6)
+void* Init(TfLiteContext* context, const char* buffer, size_t length) {
+  TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
+  void* data =
+      context->AllocatePersistentBuffer(context, sizeof(XtensaReshapeData));
+  if (InitXtensaContext()) {
+    return nullptr;
+  }
+  return data;
+}
+#endif  // defined(VISION_P6)
 
 TfLiteStatus ReshapeOutput(TfLiteContext* context, TfLiteNode* node) {
   MicroContext* micro_context = GetMicroContext(context);
 
   TfLiteTensor* input =
-      micro_context->AllocateTempInputTensor(node, kInputTensor);
+      micro_context->AllocateTempInputTensor(node, kReshapeInputTensor);
   TF_LITE_ENSURE(context, input != nullptr);
   TfLiteTensor* output =
-      micro_context->AllocateTempOutputTensor(node, kOutputTensor);
+      micro_context->AllocateTempOutputTensor(node, kReshapeOutputTensor);
   TF_LITE_ENSURE(context, output != nullptr);
   // Tensorflow's Reshape allows one of the shape components to have the
   // special -1 value, meaning it will be calculated automatically based on the
@@ -84,14 +95,26 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE(context, NumInputs(node) == 1 || NumInputs(node) == 2);
   TF_LITE_ENSURE_EQ(context, NumOutputs(node), 1);
   TF_LITE_ENSURE_EQ(context, ReshapeOutput(context, node), kTfLiteOk);
+#if defined(VISION_P6)
+  {
+    MicroContext* micro_context = GetMicroContext(context);
+    TfLiteTensor* input =
+        micro_context->AllocateTempInputTensor(node, kReshapeInputTensor);
+    // Vision P6 currently only supports upto 4D int8 input tensors
+    if (NumDimensions(input) <= 4 && input->type == kTfLiteInt8) {
+      TF_LITE_ENSURE_OK(context, ReshapePrepareVision(context, node));
+    }
+    micro_context->DeallocateTempTfLiteTensor(input);
+  }
+#endif  // VISION_P6
   return kTfLiteOk;
 }
 
 TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   const TfLiteEvalTensor* input =
-      tflite::micro::GetEvalInput(context, node, kInputTensor);
+      tflite::micro::GetEvalInput(context, node, kReshapeInputTensor);
   TfLiteEvalTensor* output =
-      tflite::micro::GetEvalOutput(context, node, kOutputTensor);
+      tflite::micro::GetEvalOutput(context, node, kReshapeOutputTensor);
 
   // TODO(b/162522304): storing input bytes in OpData increases some models
   // significantly, possibly due to alignment issues.
@@ -102,7 +125,19 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   // Do nothing for in-place reshape.
   if (input->data.raw != output->data.raw) {
     // Otherwise perform reshape with copy.
-    memcpy(output->data.raw, input->data.raw, input_bytes);
+#if defined(VISION_P6)
+    // Vision P6 currently only supports upto 4D int8 input tensors
+    if (tflite::micro::GetTensorShape(input).DimensionsCount() <= 4 &&
+        input->type == kTfLiteInt8) {
+      XtensaReshapeData* op_data_xtensa =
+          static_cast<XtensaReshapeData*>(node->user_data);
+      ReshapeEvalVision(*op_data_xtensa, input, output);
+    } else {
+#endif  // VISION_P6
+      memcpy(output->data.raw, input->data.raw, input_bytes);
+#if defined(VISION_P6)
+    }
+#endif  // VISION_P6
   }
   return kTfLiteOk;
 }
@@ -110,7 +145,12 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }  // namespace reshape
 
 TfLiteRegistration Register_RESHAPE() {
+#if defined(VISION_P6)
+  return tflite::micro::RegisterOp(reshape::Init, reshape::Prepare,
+                                   reshape::Eval);
+#else
   return tflite::micro::RegisterOp(nullptr, reshape::Prepare, reshape::Eval);
+#endif
 }
 
 }  // namespace micro

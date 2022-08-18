@@ -178,6 +178,7 @@ tflm_kernel_cc_library(
         "dequantize.cc",
         "dequantize_common.cc",
         "detection_postprocess.cc",
+        "div.cc",
         "elementwise.cc",
         "elu.cc",
         "ethosu.cc",
@@ -219,6 +220,7 @@ tflm_kernel_cc_library(
         "quantize_common.cc",
         "read_variable.cc",
         "reduce.cc",
+        "reduce_common.cc",
         "reshape.cc",
         "resize_bilinear.cc",
         "resize_nearest_neighbor.cc",
@@ -231,6 +233,7 @@ tflm_kernel_cc_library(
         "space_to_depth.cc",
         "split.cc",
         "split_v.cc",
+        "squared_difference.cc",
         "squeeze.cc",
         "strided_slice.cc",
         "sub.cc",
@@ -266,6 +269,7 @@ tflm_kernel_cc_library(
         "pooling.h",
         "prelu.h",
         "quantize.h",
+        "reduce.h",
         "softmax.h",
         "sub.h",
         "svdf.h",
@@ -280,10 +284,7 @@ tflm_kernel_cc_library(
         xtensa_fusion_f1_config(): glob(["xtensa/**/*.cc"]),
         xtensa_hifi_3z_config(): glob(["xtensa/**/*.cc"]),
         xtensa_hifi_5_config(): glob(["xtensa/**/*.cc"]),
-        xtensa_vision_p6_config(): glob(
-            ["xtensa/**/*.cc"],
-            exclude = ["xtensa/conv.cc"],
-        ),
+        xtensa_vision_p6_config(): glob(["xtensa/**/*.cc"]),
     },
     copts = micro_copts() + select({
         xtensa_fusion_f1_config(): HIFI4_COPTS,
@@ -322,7 +323,7 @@ tflm_kernel_cc_library(
         xtensa_fusion_f1_config(): ["//third_party/xtensa/nnlib_hifi4:nnlib_hifi4_lib"],
         xtensa_hifi_3z_config(): ["//third_party/xtensa/nnlib_hifi4:nnlib_hifi4_lib"],
         xtensa_hifi_5_config(): ["//third_party/xtensa/nnlib_hifi5:nnlib_hifi5_lib"],
-        xtensa_vision_p6_config(): ["//third_party/xtensa/xi_annlib_vision_p6:xi_annlib_vision_p6_lib"],
+        xtensa_vision_p6_config(): ["//third_party/xtensa/xi_tflmlib_vision_p6:xi_tflmlib_vision_p6_lib"],
         "//conditions:default": [],
     }),
 )
@@ -609,6 +610,19 @@ cc_test(
         "//tensorflow/lite/micro:test_helpers",
         "//tensorflow/lite/micro/testing:micro_test",
         "@flatbuffers//:runtime_cc",
+    ],
+)
+
+cc_test(
+    name = "div_test",
+    srcs = [
+        "div_test.cc",
+    ],
+    deps = [
+        ":kernel_runner",
+        "//tensorflow/lite/c:common",
+        "//tensorflow/lite/micro:test_helpers",
+        "//tensorflow/lite/micro/testing:micro_test",
     ],
 )
 
@@ -1193,6 +1207,19 @@ cc_test(
         "//tensorflow/lite/c:common",
         "//tensorflow/lite/micro:debug_log",
         "//tensorflow/lite/micro:op_resolvers",
+        "//tensorflow/lite/micro:test_helpers",
+        "//tensorflow/lite/micro/testing:micro_test",
+    ],
+)
+
+cc_test(
+    name = "squared_difference_test",
+    srcs = [
+        "squared_difference_test.cc",
+    ],
+    deps = [
+        ":kernel_runner",
+        "//tensorflow/lite/c:common",
         "//tensorflow/lite/micro:test_helpers",
         "//tensorflow/lite/micro/testing:micro_test",
     ],

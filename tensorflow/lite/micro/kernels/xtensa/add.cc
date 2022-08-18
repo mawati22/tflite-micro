@@ -1,4 +1,4 @@
-/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,10 +25,20 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/add.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
+#include "tensorflow/lite/micro/kernels/xtensa/xtensa_add.h"
 #include "tensorflow/lite/micro/memory_helpers.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
 
 namespace tflite {
+
+TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
+  TF_LITE_ENSURE_OK(context, AddPrepare(context, node));
+
+#if defined(VISION_P6)
+  TF_LITE_ENSURE_OK(context, AddPrepareVision(context, node));
+#endif  // VISION_P6
+  return kTfLiteOk;
+}
 
 TfLiteStatus EvalAdd(TfLiteContext* context, TfLiteNode* node, TfLiteAddParams* params,
              const OpDataAdd* data, const TfLiteEvalTensor* input1,
@@ -101,6 +111,13 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
 
   switch (output->type) {
     case kTfLiteInt8: {
+#if defined(VISION_P6)
+      const auto& op_data =
+          *(reinterpret_cast<XtensaAddOpData*>(node->user_data));
+      AddEvalQuantizedVision(context, node, *params, op_data, input1, input2,
+                             output);
+#else   // if defined(VISION_P6)
+
       if (need_broadcast) {
         reference_integer_ops::BroadcastAdd4DSlow(
             op_params, tflite::micro::GetTensorShape(input1),
@@ -139,6 +156,7 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorData<int8_t>(output));
 #endif // defined(HIFI4) || defined(HIFI5)
       }
+#endif  // if (defined(VISION_P6)
       break;
     }
     case kTfLiteInt16: {
@@ -211,7 +229,16 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
 
 void* AddInit(TfLiteContext* context, const char* buffer, size_t length) {
   TFLITE_DCHECK(context->AllocatePersistentBuffer != nullptr);
-  return context->AllocatePersistentBuffer(context, sizeof(OpDataAdd));
+  void* data;
+#if defined(VISION_P6)
+  data = context->AllocatePersistentBuffer(context, sizeof(XtensaAddOpData));
+  if (InitXtensaContext()) {
+    return nullptr;
+  }
+#else
+  data = context->AllocatePersistentBuffer(context, sizeof(OpDataAdd));
+#endif  // defined(VISION_P6)
+  return data;
 }
 
 TfLiteStatus AddEval(TfLiteContext* context, TfLiteNode* node) {
@@ -242,7 +269,7 @@ TfLiteStatus AddEval(TfLiteContext* context, TfLiteNode* node) {
 }
 
 TfLiteRegistration Register_ADD() {
-  return tflite::micro::RegisterOp(AddInit, AddPrepare, AddEval);
+  return tflite::micro::RegisterOp(AddInit, Prepare, AddEval);
 }
 
 }  // namespace tflite

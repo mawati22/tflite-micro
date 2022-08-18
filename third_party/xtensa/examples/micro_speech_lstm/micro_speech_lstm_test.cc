@@ -35,14 +35,14 @@ limitations under the License.
  * * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * */
 
-#include "third_party/xtensa/examples/micro_speech_lstm/micro_speech_lstm_model_data.h"
-#include "third_party/xtensa/examples/micro_speech_lstm/no_micro_features_data.h"
-#include "third_party/xtensa/examples/micro_speech_lstm/yes_micro_features_data.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/micro/micro_mutable_op_resolver.h"
 #include "tensorflow/lite/micro/testing/micro_test.h"
 #include "tensorflow/lite/schema/schema_generated.h"
+#include "third_party/xtensa/examples/micro_speech_lstm/micro_speech_lstm_model_data.h"
+#include "third_party/xtensa/examples/micro_speech_lstm/no_micro_features_data.h"
+#include "third_party/xtensa/examples/micro_speech_lstm/yes_micro_features_data.h"
 
 TF_LITE_MICRO_TESTS_BEGIN
 
@@ -52,7 +52,8 @@ TF_LITE_MICRO_TEST(TestInvoke) {
 
   // Map the model into a usable data structure. This doesn't involve any
   // copying or parsing, it's a very lightweight operation.
-  const tflite::Model* model = ::tflite::GetModel(g_micro_speech_lstm_model_data);
+  const tflite::Model* model =
+      ::tflite::GetModel(g_micro_speech_lstm_model_data);
   if (model->version() != TFLITE_SCHEMA_VERSION) {
     TF_LITE_REPORT_ERROR(&micro_error_reporter,
                          "Model provided is schema version %d not equal "
@@ -88,7 +89,7 @@ TF_LITE_MICRO_TEST(TestInvoke) {
   TfLiteTensor* input = interpreter.input(0);
 
   // Make sure the input has the properties we expect.
-  TF_LITE_MICRO_EXPECT_NE(nullptr, input);
+  TF_LITE_MICRO_EXPECT(input != nullptr);
   TF_LITE_MICRO_EXPECT_EQ(3, input->dims->size);
   TF_LITE_MICRO_EXPECT_EQ(1, input->dims->data[0]);
   TF_LITE_MICRO_EXPECT_EQ(49, input->dims->data[1]);

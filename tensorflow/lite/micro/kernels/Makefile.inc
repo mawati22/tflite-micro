@@ -61,6 +61,7 @@ tensorflow/lite/micro/kernels/cumsum_test.cc \
 tensorflow/lite/micro/kernels/depth_to_space_test.cc \
 tensorflow/lite/micro/kernels/depthwise_conv_test.cc \
 tensorflow/lite/micro/kernels/dequantize_test.cc \
+tensorflow/lite/micro/kernels/div_test.cc \
 tensorflow/lite/micro/kernels/elementwise_test.cc \
 tensorflow/lite/micro/kernels/elu_test.cc \
 tensorflow/lite/micro/kernels/exp_test.cc \
@@ -102,6 +103,7 @@ tensorflow/lite/micro/kernels/space_to_batch_nd_test.cc \
 tensorflow/lite/micro/kernels/space_to_depth_test.cc \
 tensorflow/lite/micro/kernels/split_test.cc \
 tensorflow/lite/micro/kernels/split_v_test.cc \
+tensorflow/lite/micro/kernels/squared_difference_test.cc \
 tensorflow/lite/micro/kernels/squeeze_test.cc \
 tensorflow/lite/micro/kernels/strided_slice_test.cc \
 tensorflow/lite/micro/kernels/sub_test.cc \
