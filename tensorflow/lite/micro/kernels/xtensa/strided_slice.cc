@@ -146,12 +146,12 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   return CheckOutputSize(context, &op_context);
 }
 
-#if defined(HIFI4_INTERNAL) || defined(HIFI4)
-void StridedSlice_int16_hifi4opt(const tflite::StridedSliceParams& op_params,
-                                 const RuntimeShape& unextended_input_shape,
-                                 const int16_t* input_data,
-                                 const RuntimeShape& unextended_output_shape,
-                                 int16_t* output_data) {
+#if defined(HIFI4_INTERNAL) || defined(HIFI4) || defined(HIFI5)
+void StridedSlice_int16_hifi(const tflite::StridedSliceParams& op_params,
+                             const RuntimeShape& unextended_input_shape,
+                             const int16_t* input_data,
+                             const RuntimeShape& unextended_output_shape,
+                             int16_t* output_data) {
   using ::tflite::strided_slice::StartForAxis;
   using ::tflite::strided_slice::StopForAxis;
 
@@ -190,7 +190,7 @@ void StridedSlice_int16_hifi4opt(const tflite::StridedSliceParams& op_params,
       input_shape.Dims(1), input_shape.Dims(2), input_shape.Dims(3),
       input_shape.Dims(4));
 }
-#endif  // HIFI4_INTERNAL || defined(HIFI4)
+#endif  // HIFI4_INTERNAL || defined(HIFI4) || defined(HIFI5)
 
 TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   TFLITE_DCHECK(node->user_data != nullptr);
@@ -217,8 +217,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
                                   tflite::micro::GetTensorData<int8_t>(output));
       break;
     case kTfLiteInt16:
-#if defined(HIFI4_INTERNAL) || defined(HIFI4)
-      StridedSlice_int16_hifi4opt(
+#if defined(HIFI4_INTERNAL) || defined(HIFI4) || defined(HIFI5)
+      StridedSlice_int16_hifi(
           op_params, tflite::micro::GetTensorShape(input),
           tflite::micro::GetTensorData<int16_t>(input),
           tflite::micro::GetTensorShape(output),
@@ -229,7 +229,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorData<int16_t>(input),
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<int16_t>(output));
-#endif  // HIFI4_INTERNAL || defined(HIFI4)
+#endif  // HIFI4_INTERNAL || defined(HIFI4) || defined(HIFI5)
       break;
     case kTfLiteInt32:
       reference_ops::StridedSlice(

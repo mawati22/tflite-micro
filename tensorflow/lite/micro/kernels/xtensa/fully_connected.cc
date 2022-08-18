@@ -93,10 +93,6 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
     return kTfLiteError;
   }
 
-  // Filter weights will always be symmetric quantized since we only support
-  // int8 quantization.
-  TFLITE_DCHECK(filter->params.zero_point == 0);
-
   TFLITE_DCHECK(GetTensorShape(output).DimensionsCount() == 2);
 
   TF_LITE_ENSURE_OK(
@@ -142,14 +138,28 @@ TfLiteStatus EvalQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
   const int accum_depth = filter_shape.Dims(filter_dim_count - 1);
 
   FullyConnectedParams op_params = FullyConnectedParamsQuantized(data);
-  for (int b = 0; b < num_batches; ++b) {
+  if(num_batches == 1) {
     TF_LITE_ENSURE_EQ(
         context,
-        xa_nn_fully_connected_sym8sxasym8s_asym8s(
-            (tflite::micro::GetTensorData<int8_t>(output) + b * output_depth),
+        xa_nn_fully_connected_asym8sxasym8s_asym8s(
+            tflite::micro::GetTensorData<int8_t>(output),
             tflite::micro::GetTensorData<int8_t>(filter),
-            (tflite::micro::GetTensorData<int8_t>(input) + b * accum_depth),
+            tflite::micro::GetTensorData<int8_t>(input),
             bias_data, accum_depth, output_depth, op_params.input_offset,
+            op_params.weights_offset, op_params.output_multiplier,
+            op_params.output_shift, op_params.output_offset),
+        0);
+  }
+  else {
+    TF_LITE_ENSURE_EQ(
+        context,
+        xa_nn_matmul_asym8sxasym8s_asym8s(
+            tflite::micro::GetTensorData<int8_t>(output),
+            tflite::micro::GetTensorData<int8_t>(filter),
+            tflite::micro::GetTensorData<int8_t>(input),
+            bias_data, output_depth, accum_depth, accum_depth,
+            num_batches, accum_depth, output_depth, 1,
+            op_params.weights_offset, op_params.input_offset,
             op_params.output_multiplier, op_params.output_shift,
             op_params.output_offset),
         0);
@@ -179,7 +189,7 @@ TfLiteStatus EvalQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
       tflite::micro::GetTensorShape(bias), bias_data,
       tflite::micro::GetTensorShape(output),
       tflite::micro::GetTensorData<int8_t>(output));
-#endif  // defined(HIFI4) || defined(HIFI4_INTERNAL) || defined(HIFI5)
+#endif // defined(HIFI4) || defined(HIFI4_INTERNAL) || defined(HIFI5)
 
   return kTfLiteOk;
 }
