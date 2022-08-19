@@ -29,7 +29,8 @@ limitations under the License.
 
 namespace tflite {
 
-TfLiteStatus EvalMulQuantizedHiFi(TfLiteContext* context, TfLiteNode* node, const OpDataMul* data,
+TfLiteStatus EvalMulQuantizedHiFi(TfLiteContext* context,
+                   TfLiteNode* node, const OpDataMul* data,
                    const TfLiteEvalTensor* input1,
                    const TfLiteEvalTensor* input2, TfLiteEvalTensor* output) {
   tflite::ArithmeticParams op_params = {};
@@ -44,19 +45,23 @@ TfLiteStatus EvalMulQuantizedHiFi(TfLiteContext* context, TfLiteNode* node, cons
 
   if (output->type == kTfLiteInt8) {
       int err;
-      const RuntimeShape& input1_shape = tflite::micro::GetTensorShape(input1);
-      const RuntimeShape& input2_shape = tflite::micro::GetTensorShape(input2);
-      const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
-      const int flat_size =
-        MatchingElementsSize(input1_shape, input2_shape, output_shape);
+      const RuntimeShape extended_input1_shape =
+        RuntimeShape::ExtendedShape(4, tflite::micro::GetTensorShape(input1));
+      const RuntimeShape extended_input2_shape =
+        RuntimeShape::ExtendedShape(4, tflite::micro::GetTensorShape(input2));
+      const RuntimeShape extended_output_shape =
+        RuntimeShape::ExtendedShape(4, tflite::micro::GetTensorShape(output));
 
-      err = xa_nn_elm_mul_asym8sxasym8s_asym8s(
-          tflite::micro::GetTensorData<int8_t>(output), op_params.output_offset,
+      err = xa_nn_elm_mul_broadcast_4D_asym8sxasym8s_asym8s(
+          tflite::micro::GetTensorData<int8_t>(output),
+          extended_output_shape.DimsData(), op_params.output_offset,
           op_params.output_shift, op_params.output_multiplier,
           op_params.quantized_activation_min,
-          op_params.quantized_activation_max, tflite::micro::GetTensorData<int8_t>(input1),
-          op_params.input1_offset, tflite::micro::GetTensorData<int8_t>(input2),
-          op_params.input2_offset, flat_size);
+          op_params.quantized_activation_max,
+          tflite::micro::GetTensorData<int8_t>(input1),
+          extended_input1_shape.DimsData(), op_params.input1_offset,
+          tflite::micro::GetTensorData<int8_t>(input2),
+          extended_input2_shape.DimsData(), op_params.input2_offset);
 
       TF_LITE_ENSURE(context, err == 0);
   }
@@ -126,11 +131,8 @@ TfLiteStatus MulEval(TfLiteContext* context, TfLiteNode* node) {
 
   switch (input1->type) {
     case kTfLiteInt8:
-#if defined(HIFI5) || defined(HIFI4)
-      if (!need_broadcast) 
-        EvalMulQuantizedHiFi(context, node, data, input1, input2, output);
-      else
-        EvalMulQuantizedReference(context, node, data, input1, input2, output);
+#if defined(HIFI4) || defined(HIFI5)
+      EvalMulQuantizedHiFi(context, node, data, input1, input2, output);
 #else
       EvalMulQuantizedReference(context, node, data, input1, input2, output);
 #endif

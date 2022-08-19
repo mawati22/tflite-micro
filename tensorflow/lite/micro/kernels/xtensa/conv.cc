@@ -92,7 +92,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       break;
     }
     case kTfLiteInt16: {
-#if defined(HIFI4_INTERNAL) || defined(HIFI4)
+#if defined(HIFI4_INTERNAL) || defined(HIFI4) || defined(HIFI5)
       ConvEvalHifi16(context, node, params, op_data, input, filter, bias,
                      output);
 #else
