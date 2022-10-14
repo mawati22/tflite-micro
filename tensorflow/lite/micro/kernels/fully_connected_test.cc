@@ -435,7 +435,7 @@ TF_LITE_MICRO_TEST(SimpleTestQuantizedInt8) {
       kTfLiteOk);
 }
 
-#if !(defined(XTENSA) || defined(HEXAGON))
+#if !(defined(HEXAGON))
 TF_LITE_MICRO_TEST(SimpleTestQuantizedInt16) {
   const float input_scale = 128.0 / 65536;
   const int input_zero_point = 0;
