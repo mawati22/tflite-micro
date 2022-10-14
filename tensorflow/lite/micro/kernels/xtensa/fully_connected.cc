@@ -87,7 +87,7 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
       node, kFullyConnectedOutputTensor);
   TF_LITE_ENSURE(context, output != nullptr);
 
-  if (input->type != kTfLiteInt8) {
+  if (!((input->type == (kTfLiteInt8)) || (input->type == (kTfLiteInt16)))) {
     MicroPrintf("Type %s (%d) not supported.", TfLiteTypeGetName(input->type),
                 input->type);
     return kTfLiteError;
@@ -194,6 +194,57 @@ TfLiteStatus EvalQuantizedInt8(TfLiteContext* context, TfLiteNode* node,
   return kTfLiteOk;
 }
 
+TfLiteStatus EvalQuantizedInt16(TfLiteContext* context, TfLiteNode* node,
+                               const OpDataFullyConnected& data,
+                               const TfLiteEvalTensor* input,
+                               const TfLiteEvalTensor* filter,
+                               const TfLiteEvalTensor* bias,
+                               TfLiteEvalTensor* output) {
+  const int64_t* bias_data =
+      nullptr != bias ? tflite::micro::GetTensorData<int64_t>(bias) : nullptr;
+
+#if defined(HIFI4) || defined(HIFI4_INTERNAL) || defined(HIFI5)
+  const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
+  const int num_batches = output_shape.Dims(0);
+  const int output_depth = output_shape.Dims(1);
+
+  const RuntimeShape& filter_shape = tflite::micro::GetTensorShape(filter);
+  const int filter_dim_count = filter_shape.DimensionsCount();
+  const int accum_depth = filter_shape.Dims(filter_dim_count - 1);
+
+  FullyConnectedParams op_params = FullyConnectedParamsQuantized(data);
+  for (int b = 0; b < num_batches; ++b) {
+    TF_LITE_ENSURE_EQ(
+        context,
+        xa_nn_fully_connected_sym8sxsym16s_sym16s(
+            (tflite::micro::GetTensorData<int16_t>(output) + b * output_depth),
+            tflite::micro::GetTensorData<int8_t>(filter),
+            (tflite::micro::GetTensorData<int16_t>(input) + b * accum_depth),
+            bias_data, accum_depth, output_depth,
+            op_params.output_multiplier, op_params.output_shift),
+        0);
+  }
+
+  int16_t* output_arr = tflite::micro::GetTensorData<int16_t>(output);
+  TF_LITE_ENSURE_EQ(context,
+                    xa_nn_vec_activation_min_max_16_16(
+                        output_arr, output_arr, data.output_activation_min,
+                        data.output_activation_max, num_batches * output_depth),
+                    0);
+#else
+  reference_integer_ops::FullyConnected(
+      FullyConnectedParamsQuantized(data), tflite::micro::GetTensorShape(input),
+      tflite::micro::GetTensorData<int16_t>(input),
+      tflite::micro::GetTensorShape(filter),
+      tflite::micro::GetTensorData<int8_t>(filter),
+      tflite::micro::GetTensorShape(bias), bias_data,
+      tflite::micro::GetTensorShape(output),
+      tflite::micro::GetTensorData<int16_t>(output));
+#endif  // defined(HIFI4) || defined(HIFI4_INTERNAL) || defined(HIFI5)
+  return kTfLiteOk;
+}
+
+
 TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   TFLITE_DCHECK(node->user_data != nullptr);
   const auto& data =
@@ -211,7 +262,24 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   TfLiteEvalTensor* output =
       tflite::micro::GetEvalOutput(context, node, kFullyConnectedOutputTensor);
 
-  return EvalQuantizedInt8(context, node, data, input, filter, bias, output);
+  switch (input->type) {
+    case kTfLiteInt8: {
+      return EvalQuantizedInt8(context, node, data, input, filter, bias,
+                               output);
+      break;
+    }
+    case kTfLiteInt16: {
+      return EvalQuantizedInt16(context, node, data, input, filter, bias,
+                                output);
+      break;
+    }
+    default: {
+      MicroPrintf("Type %s (%d) not supported.", TfLiteTypeGetName(input->type),
+                  input->type);
+      return kTfLiteError;
+    }
+  }
+  return kTfLiteOk;
 }
 
 }  // namespace

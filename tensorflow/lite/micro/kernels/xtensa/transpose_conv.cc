@@ -204,10 +204,6 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
     scratch_buffer_size = xa_nn_transpose_conv_getsize(input_height,
                               input_width, input_depth, filter_height,
                               filter_width, stride_width, stride_height,
-#if defined(HIFI4)
-                              data->params.padding_values.width,
-                              data->params.padding_values.height,
-#endif
                               output_height, output_width, num_channels,
                               PREC_SYM8S, PREC_SYM16S);
     TFLITE_DCHECK(context->RequestScratchBufferInArena(
