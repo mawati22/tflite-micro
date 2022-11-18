@@ -192,8 +192,8 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   if (input->type == kTfLiteInt16) {
     TFLITE_DCHECK(context->RequestScratchBufferInArena != nullptr);
 #if defined(HIFI4) || defined(HIFI5)
-    const int stride_width = data->params.stride_width;
-    const int stride_height = data->params.stride_height;
+    const int stride_width = params->stride_width;
+    const int stride_height = params->stride_height;
 
     const int input_height = SizeOfDimension(input, 1);
     const int input_width = SizeOfDimension(input, 2);

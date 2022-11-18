@@ -33,7 +33,7 @@ endif
 # Create a cflag based on the specified TARGET_ARCH. For example:
 #   TARGET_ARCH=hifi4 --> -DHIFI4
 #  For TARGET_ARCH=hifi3/3z or fusion_f1, cflag should be -DHIFI4.
-ifeq ($(TARGET_ARCH), $(filter $(TARGET_ARCH), hifi3 hifi3z fusion_f1))
+ifeq ($(TARGET_ARCH), $(filter $(TARGET_ARCH), hifi3 hifi3z fusion_f1 hifi1))
   TARGET_ARCH_DEFINES := -DHIFI4
 else
   TARGET_ARCH_DEFINES := -D$(shell echo $(TARGET_ARCH) | tr [a-z] [A-Z])
