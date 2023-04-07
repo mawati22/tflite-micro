@@ -46,13 +46,13 @@ TfLiteStatus ReduceEvalVision(const XtensaReduceOpData& data,
 
 #elif defined(HIFI5) || defined(HIFI4)
 
-TfLiteStatus PrepareMeanOrSumHifi(TfLiteContext* context, TfLiteNode* node);
+// TfLiteStatus PrepareMeanOrSumHifi(TfLiteContext* context, TfLiteNode* node);
 
-TfLiteStatus PrepareMaxHifi(TfLiteContext* context, TfLiteNode* node);
+// TfLiteStatus PrepareMaxHifi(TfLiteContext* context, TfLiteNode* node);
 
-TfLiteStatus EvalMeanHifi(TfLiteContext* context, TfLiteNode* node);
+// TfLiteStatus EvalMeanHifi(TfLiteContext* context, TfLiteNode* node);
 
-TfLiteStatus EvalMaxHifi(TfLiteContext* context, TfLiteNode* node);
+// TfLiteStatus EvalMaxHifi(TfLiteContext* context, TfLiteNode* node);
 
 #endif  // VISION_P6
 

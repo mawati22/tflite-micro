@@ -40,8 +40,13 @@ INCLUDES := \
   -I./third_party/kissfft/tools \
   -I./third_party/ruy
 
-CXXFLAGS :=
-CCFLAGS :=
+ifneq ($(TENSORFLOW_ROOT),)
+  INCLUDES += -I$(TENSORFLOW_ROOT)
+endif
+
+ifneq ($(EXTERNAL_DIR),)
+  INCLUDES += -I$(EXTERNAL_DIR)
+endif
 
 ifeq ($(BUILD_TYPE), cmsis_nn)
   CXX := arm-none-eabi-g++
@@ -50,12 +55,13 @@ ifeq ($(BUILD_TYPE), cmsis_nn)
 
   INCLUDES += \
     -I./third_party/cmsis \
-    -I./third_party/cmsis/CMSIS/Core/Include \
-    -I./third_party/cmsis/CMSIS/DSP/Include \
-    -I./third_party/cmsis/CMSIS/NN/Include
+    -I./third_party/cmsis_nn \
+    -I./third_party/cmsis_nn/Include \
+    -I./third_party/cmsis/CMSIS/Core/Include
 
   COMMON_FLAGS += \
     -DTF_LITE_MCU_DEBUG_LOG \
+    -DPROJECT_GENERATION \
     -mthumb \
     -mlittle-endian \
     -funsigned-char \
@@ -63,23 +69,16 @@ ifeq ($(BUILD_TYPE), cmsis_nn)
     -MD \
     -DCMSIS_NN
 
-  # For this build type there is additional dependency to CMSIS.
-  TOOLCHAIN = gcc
-  SKIP_ARM_GCC_DOWNLOAD := "yes please"
-  include cortex_m_generic_makefile.inc
-  INCLUDES += \
-    -I./third_party/cmsis/Device/ARM/$(ARM_CPU)/Include
-
 endif
 
-CXXFLAGS += \
+CXXFLAGS := \
   -std=c++11 \
   -fno-rtti \
   -fno-exceptions \
   -fno-threadsafe-statics \
   $(COMMON_FLAGS)
 
-CCFLAGS += \
+CCFLAGS := \
   -std=c11 \
   $(COMMON_FLAGS)
 
@@ -90,7 +89,7 @@ OBJDIR := $(GENDIR)/obj
 BINDIR := $(GENDIR)/bin
 LIB := $(GENDIR)/libtflm.a
 
-TFLM_CC_SRCS := $(shell find tensorflow -name "*.cc" -o -name "*.c")
+TFLM_CC_SRCS := $(shell find $(TENSORFLOW_ROOT)tensorflow -name "*.cc" -o -name "*.c")
 OBJS := $(addprefix $(OBJDIR)/, $(patsubst %.c,%.o,$(patsubst %.cc,%.o,$(TFLM_CC_SRCS))))
 
 $(OBJDIR)/%.o: %.cc
@@ -110,13 +109,13 @@ clean:
 
 libtflm: $(LIB)
 
+HELLO_WORLD_SRCS := $(wildcard examples/hello_world/*.cc)
+HELLO_WORLD_SRCS += $(wildcard examples/hello_world/models/*.cc)
+HELLO_WORLD_INCLUDES := $(INCLUDES) -I./examples/hello_world
+
 hello_world: libtflm
 	@mkdir -p $(BINDIR)
-	$(CXX) $(CXXFLAGS) $(wildcard examples/hello_world/*.cc) $(INCLUDES) $(LIB) -o $(BINDIR)/$@
-
-magic_wand: libtflm
-	@mkdir -p $(BINDIR)
-	$(CXX) $(CXXFLAGS) $(wildcard examples/magic_wand/*.cc) $(INCLUDES) $(LIB) -o $(BINDIR)/$@
+	$(CXX) $(CXXFLAGS) $(HELLO_WORLD_SRCS) $(HELLO_WORLD_INCLUDES) $(LIB) -o $(BINDIR)/$@
 
 MICRO_SPEECH_SRCS := $(wildcard examples/micro_speech/*.cc)
 MICRO_SPEECH_SRCS += $(wildcard examples/micro_speech/*/*.cc)
@@ -135,4 +134,4 @@ person_detection: libtflm
 	@mkdir -p $(BINDIR)
 	$(CXX) $(CXXFLAGS) $(PERSON_DETECTION_SRCS) $(PERSON_DETECTION_THIRD_PARTY_SRCS) $(PERSON_DETECTION_INCLUDES) $(LIB) -o $(BINDIR)/$@
 
-examples: hello_world magic_wand micro_speech person_detection
+examples: hello_world micro_speech person_detection

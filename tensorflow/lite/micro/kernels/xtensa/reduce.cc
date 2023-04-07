@@ -44,7 +44,7 @@ void* XtensaInitReduce(TfLiteContext* context, const char* buffer,
 }
 
 TfLiteStatus XtensaPrepareMax(TfLiteContext* context, TfLiteNode* node) {
-#if defined(HIFI5) || defined(HIFI4)
+#if 0 //defined(HIFI5) || defined(HIFI4)
   return PrepareMaxHifi(context, node);
 #else
   OpDataReduce* op_data =
@@ -58,7 +58,7 @@ TfLiteStatus XtensaPrepareMax(TfLiteContext* context, TfLiteNode* node) {
 }
 
 TfLiteStatus XtensaPrepareMeanOrSum(TfLiteContext* context, TfLiteNode* node) {
-#if defined(HIFI5) || defined(HIFI4)
+#if 0 //defined(HIFI5) || defined(HIFI4)
   return PrepareMeanOrSumHifi(context, node);
 #else
   OpDataReduce* op_data =
@@ -68,7 +68,7 @@ TfLiteStatus XtensaPrepareMeanOrSum(TfLiteContext* context, TfLiteNode* node) {
 }
 
 TfLiteStatus XtensaEvalMean(TfLiteContext* context, TfLiteNode* node) {
-#if defined(HIFI5) || defined(HIFI4)
+#if 0 //defined(HIFI5) || defined(HIFI4)
   return EvalMeanHifi(context, node);
 #else
   OpDataReduce* op_data =
@@ -78,7 +78,7 @@ TfLiteStatus XtensaEvalMean(TfLiteContext* context, TfLiteNode* node) {
 }
 
 TfLiteStatus XtensaEvalMax(TfLiteContext* context, TfLiteNode* node) {
-#if defined(HIFI5) || defined(HIFI4)
+#if 0 // defined(HIFI5) || defined(HIFI4)
   return EvalMaxHifi(context, node);
 #else  // defined(HIFI5) || defined(HIFI4)
   XtensaReduceOpData* op_data_xtensa =
@@ -116,17 +116,17 @@ TfLiteStatus XtensaEvalSum(TfLiteContext* context, TfLiteNode* node) {
   return EvalSumHelper(context, node, op_data);
 }
 
-TfLiteRegistration Register_MEAN() {
+TfLiteRegistration_V1 Register_MEAN() {
   return tflite::micro::RegisterOp(XtensaInitReduce, XtensaPrepareMeanOrSum,
                                    XtensaEvalMean);
 }
 
-TfLiteRegistration Register_REDUCE_MAX() {
+TfLiteRegistration_V1 Register_REDUCE_MAX() {
   return tflite::micro::RegisterOp(XtensaInitReduce, XtensaPrepareMax,
                                    XtensaEvalMax);
 }
 
-TfLiteRegistration Register_SUM() {
+TfLiteRegistration_V1 Register_SUM() {
   return tflite::micro::RegisterOp(XtensaInitReduce, XtensaPrepareMeanOrSum,
                                    XtensaEvalSum);
 }

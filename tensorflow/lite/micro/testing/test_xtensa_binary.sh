@@ -21,7 +21,7 @@
 # Second argument is a regular expression that's required to be in the output
 # logs for the test to pass.
 
-declare -r TEST_TMPDIR=/tmp/test_xtensa_binary/
+declare -r TEST_TMPDIR=./tmp/test_xtensa_binary/
 declare -r MICRO_LOG_PATH=${TEST_TMPDIR}/$1
 declare -r MICRO_LOG_FILENAME=${MICRO_LOG_PATH}/logs.txt
 mkdir -p ${MICRO_LOG_PATH}

@@ -33,6 +33,7 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/arc_mli/scratch_buffers.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/memory_helpers.h"
+#include "tensorflow/lite/micro/micro_log.h"
 
 namespace tflite {
 
@@ -416,7 +417,7 @@ TfLiteStatus AddEval(TfLiteContext* context, TfLiteNode* node) {
   return ret_val;
 }
 
-TfLiteRegistration Register_ADD() {
+TfLiteRegistration_V1 Register_ADD() {
   return tflite::micro::RegisterOp(AddInit, AddPrepare, AddEval);
 }
 

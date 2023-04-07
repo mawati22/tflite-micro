@@ -34,7 +34,7 @@ def generate_file(out_fname, array_name, array_type, array_contents, size):
     out_cc_file.write('#include <cstdint>\n\n')
     out_cc_file.write('#include "{}"\n\n'.format(
         out_fname.split('genfiles/')[-1].replace('.cc', '.h')))
-    out_cc_file.write('const unsigned int {}_size = {};'.format(
+    out_cc_file.write('const unsigned int {}_size = {};\n'.format(
         array_name, str(size)))
     out_cc_file.write('alignas(16) const {} {}[] = {{'.format(
         array_type, array_name))
@@ -44,7 +44,8 @@ def generate_file(out_fname, array_name, array_type, array_contents, size):
   elif out_fname.endswith('.h'):
     out_hdr_file = open(out_fname, 'w')
     out_hdr_file.write('#include <cstdint>\n\n')
-    out_hdr_file.write('extern const unsigned int {}_size;'.format(array_name))
+    out_hdr_file.write(
+        'extern const unsigned int {}_size;\n'.format(array_name))
     out_hdr_file.write('extern const {} {}[];\n'.format(
         array_type, array_name))
     out_hdr_file.close()
@@ -52,25 +53,27 @@ def generate_file(out_fname, array_name, array_type, array_contents, size):
     raise ValueError('generated file must be end with .cc or .h')
 
 
+def bytes_to_hexstring(buffer):
+  """Convert a byte array to a hex string."""
+  hex_values = [hex(buffer[i]) for i in range(len(buffer))]
+  out_string = ','.join(hex_values)
+  return out_string
+
+
 def generate_array(input_fname):
   """Return array size and array of data from the input file."""
   if input_fname.endswith('.tflite'):
     with open(input_fname, 'rb') as input_file:
-      out_string = ''
-      byte = input_file.read(1)
-      size = 0
-      while byte:
-        out_string += '0x' + byte.hex() + ','
-        byte = input_file.read(1)
-        size += 1
-      return [size, out_string]
+      buffer = input_file.read()
+    size = len(buffer)
+    out_string = bytes_to_hexstring(buffer)
+    return [size, out_string]
   elif input_fname.endswith('.bmp'):
     img = Image.open(input_fname, mode='r')
     image_bytes = img.tobytes()
-    out_string = ''
-    for byte in image_bytes:
-      out_string += hex(byte) + ','
-    return [len(image_bytes), out_string]
+    size = len(image_bytes)
+    out_string = bytes_to_hexstring(image_bytes)
+    return [size, out_string]
   elif input_fname.endswith('.wav'):
     wav_file = wave.open(input_fname, mode='r')
     num_channels = wav_file.getnchannels()
@@ -105,6 +108,8 @@ def get_array_name(input_fname):
     return [base_array_name + '_test_data', 'int16_t']
   elif input_fname.endswith('_int8.csv'):
     return [base_array_name + '_test_data', 'int8_t']
+  elif input_fname.endswith('_float.csv'):
+    return [base_array_name + '_test_data', 'float']
 
 
 def main():
@@ -129,7 +134,8 @@ def main():
   else:
     # Deduplicate inputs to prevent duplicate generated files (ODR issue).
     for input_file in list(dict.fromkeys(args.inputs)):
-      output_base_fname = os.path.join(args.output, input_file.split('.')[0])
+      output_base_fname = os.path.join(args.output,
+                                       os.path.splitext(input_file)[0])
       if input_file.endswith('.tflite'):
         output_base_fname = output_base_fname + '_model_data'
       elif input_file.endswith('.bmp'):
