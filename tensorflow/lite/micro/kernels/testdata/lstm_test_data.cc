@@ -252,10 +252,17 @@ NodeQuantizationParameters Get2X2Int16LstmQuantizationSettings() {
   // state quantization parameters
   quantization_settings.input = {/*scale=*/3.0518044e-5, /*zp=*/0,
                                  /*symmetry=*/false};
+#if !defined(XTENSA)
   quantization_settings.output = {/*scale=*/1.8310826e-5, /*zp=*/-5461,
                                   /*symmetry=*/false};
   quantization_settings.hidden_state = {/*scale=*/1.8310826e-5, /*zp=*/-5461,
                                         /*symmetry=*/false};
+#else
+  quantization_settings.output = {/*scale=*/1.8310826e-5, /*zp=*/0,
+                                  /*symmetry=*/false};
+  quantization_settings.hidden_state = {/*scale=*/1.8310826e-5, /*zp=*/0,
+                                        /*symmetry=*/false};
+#endif
   quantization_settings.cell_state = {/*scale=*/0.00024414062, /*zp=*/0,
                                       /*symmetry=*/true};
 
