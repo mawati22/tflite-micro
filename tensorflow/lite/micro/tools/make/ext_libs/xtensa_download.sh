@@ -50,7 +50,7 @@ if [[ ${2} == "hifi4" ]]; then
 elif [[ ${2} == "hifi5" ]]; then
   LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi5/raw/master/archive/xa_nnlib_hifi5_04_11_2023_interim.zip"
   LIBRARY_DIRNAME="xa_nnlib_hifi5"
-  LIBRARY_MD5="aa03c64b8f77ee2954c9a7b66977d779"
+  LIBRARY_MD5="fad07ea9064869663236b8bf1d0fba33"
 elif [[ ${2} == "vision_p6" ]]; then
   LIBRARY_URL="https://github.com/foss-xtensa/tflmlib_vision/raw/main/archive/xi_tflmlib_vision_p6_22_06_29.zip"
   LIBRARY_DIRNAME="xi_tflmlib_vision_p6"
