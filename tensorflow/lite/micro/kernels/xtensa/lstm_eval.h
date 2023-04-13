@@ -27,6 +27,7 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/lstm_shared.h"
 #include "tensorflow/lite/micro/micro_log.h"
+#include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 
 namespace tflite {
 
@@ -315,6 +316,29 @@ void CalculateLstmGate(
 // cell gate Formula: updated_cell_state = forget_gate_output*cell_state +
 // input_gate_output * cell_gate_output, where * denotes element wise
 // multiplication
+#if defined(HIFI5) || defined(HIFI4)
+void UpdateLstmCell(const LstmStepManager& step_info,
+                    TfLiteEvalTensor* cell_state,
+                    // Gate outputs
+                    int16_t* forget_gate_output,
+                    const int16_t* input_gate_output,
+                    const int16_t* cell_gate_output,
+                    // Mul parameters
+                    const ArithmeticParams& forget_cell_mul_params,
+                    const ArithmeticParams& input_mul_params,
+                    const CellStateInfo& cell_state_info, int16_t* buffer);
+
+void UpdateLstmCell(const LstmStepManager& step_info,
+                    TfLiteEvalTensor* cell_state,
+                    // Gate outputs
+                    float* forget_gate_output,
+                    const float* input_gate_output,
+                    const float* cell_gate_output,
+                    // Mul parameters
+                    const ArithmeticParams& forget_cell_mul_params,
+                    const ArithmeticParams& input_mul_params,
+                    const CellStateInfo& cell_state_info, float* buffer);
+#else // #if defined(HIFI5) || defined(HIFI4)
 template <typename CellType>
 void UpdateLstmCell(const LstmStepManager& step_info,
                     TfLiteEvalTensor* cell_state,
@@ -357,6 +381,7 @@ void UpdateLstmCell(const LstmStepManager& step_info,
                  step_info.CellStateOffset());
   }
 }
+#endif // #if defined(HIFI5) || defined(HIFI4)
 
 // Update the hidden state of the LSTM kernel using the following formula:
 // updated_hidden_state = Tanh(updated_cell_state) * output_gate_output, * means
@@ -453,7 +478,11 @@ void LstmStep(const LstmStepManager& step_info, const OpDataLSTM& op_data,
   const InterGateParameters& inter_gate_params = op_data.inter_gate_parameters;
   CellType* updated_input_buffer = buffers.buffer1;  // reuse buffer
 
+#if defined(HIFI5) || defined(HIFI4)
+  UpdateLstmCell(step_info, kernel_content.CellStateTensor(),
+#else
   UpdateLstmCell<CellType>(step_info, kernel_content.CellStateTensor(),
+#endif
                            forget_gate_output, input_gate_output,
                            cell_gate_output,
                            inter_gate_params.forget_cell_mul_params,
