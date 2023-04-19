@@ -339,14 +339,14 @@ void UpdateLstmCell(const LstmStepManager& step_info,
 
   auto cell_state_shape = step_info.StateShape();
   WORD32 err;
-  err = xa_nn_lstm_cell_state_update_sym16s(
+  // Multiplier is equivalent to 0.5 here so adding 1 to shifts
+  err = xa_nn_lstm_cell_state_update_16(
       tflite::micro::GetTensorData<int16_t>(cell_state) +
       step_info.CellStateOffset(),
       forget_gate_output, cell_gate_output, input_gate_output,
-      forget_cell_mul_params.output_multiplier,
-      forget_cell_mul_params.output_shift,
-      input_mul_params.output_multiplier, input_mul_params.output_shift,
-      cell_state_info.quantized_cell_clip, cell_state_shape.FlatSize());
+      forget_cell_mul_params.output_shift - 1,
+      input_mul_params.output_shift - 1, cell_state_info.quantized_cell_clip,
+      cell_state_shape.FlatSize());
 }
 
 void UpdateLstmCell(const LstmStepManager& step_info,
