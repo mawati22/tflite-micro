@@ -48,9 +48,9 @@ if [[ ${2} == "hifi4" ]]; then
   LIBRARY_DIRNAME="xa_nnlib_hifi4"
   LIBRARY_MD5="7fbf7d14e48df7b9b99b53326c0f7fa1"
 elif [[ ${2} == "hifi5" ]]; then
-  LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi5/raw/master/archive/xa_nnlib_hifi5_04_11_2023_interim.zip"
+  LIBRARY_URL="http://github.com/foss-xtensa/nnlib-hifi5/raw/master/archive/xa_nnlib_hifi5_04_19_2023.zip"
   LIBRARY_DIRNAME="xa_nnlib_hifi5"
-  LIBRARY_MD5="fad07ea9064869663236b8bf1d0fba33"
+  LIBRARY_MD5="291f03d7eb330ed30e6ec63bae311b5a"
 elif [[ ${2} == "vision_p6" ]]; then
   LIBRARY_URL="https://github.com/foss-xtensa/tflmlib_vision/raw/main/archive/xi_tflmlib_vision_p6_22_06_29.zip"
   LIBRARY_DIRNAME="xi_tflmlib_vision_p6"
