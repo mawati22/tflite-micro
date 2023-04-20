@@ -25,6 +25,7 @@ limitations under the License.
 #include "tensorflow/lite/kernels/padding.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
+#include "tensorflow/lite/micro/micro_log.h"
 
 namespace tflite {
 namespace {
@@ -280,8 +281,15 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
   switch (input->type) {  // Already know in/out types are same.
     case kTfLiteFloat32: {
+      const auto& params =
+          *(reinterpret_cast<TfLiteConvParams*>(node->builtin_data));
+      ConvParams op_params = data.params;
+      CalculateActivationRange(params.activation,
+                               &op_params.float_activation_min,
+                               &op_params.float_activation_max);
+
       reference_ops::TransposeConv(
-          data.params, tflite::micro::GetTensorShape(input),
+          op_params, tflite::micro::GetTensorShape(input),
           tflite::micro::GetTensorData<float>(input),
           tflite::micro::GetTensorShape(filter),
           tflite::micro::GetTensorData<float>(filter),
@@ -400,7 +408,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace
 
-TfLiteRegistration Register_TRANSPOSE_CONV() {
+TfLiteRegistration_V1 Register_TRANSPOSE_CONV() {
   return tflite::micro::RegisterOp(Init, Prepare, Eval);
 }
 

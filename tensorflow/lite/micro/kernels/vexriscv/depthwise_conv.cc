@@ -23,6 +23,7 @@ limitations under the License.
 #include "tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow/lite/kernels/padding.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
+#include "tensorflow/lite/micro/micro_log.h"
 
 namespace tflite {
 namespace ops {
@@ -470,7 +471,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace depthwise_conv
 
-TfLiteRegistration Register_DEPTHWISE_CONV_2D() {
+TfLiteRegistration_V1 Register_DEPTHWISE_CONV_2D() {
   return tflite::micro::RegisterOp(
       depthwise_conv::Init, depthwise_conv::Prepare, depthwise_conv::Eval);
 }

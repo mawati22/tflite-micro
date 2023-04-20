@@ -1,25 +1,34 @@
 # Explicitly add kernel sources specific to the Xtensa optimized
 # implementations.
 MICROLITE_CC_KERNEL_SRCS += \
-  tensorflow/lite/micro/kernels/xtensa/add_vision.cc \
-  tensorflow/lite/micro/kernels/xtensa/conv_hifi.cc \
-  tensorflow/lite/micro/kernels/xtensa/conv_int16_reference.cc \
-  tensorflow/lite/micro/kernels/xtensa/conv_int8_reference.cc \
-  tensorflow/lite/micro/kernels/xtensa/conv_vision.cc \
-  tensorflow/lite/micro/kernels/xtensa/depthwise_conv_hifi.cc \
-  tensorflow/lite/micro/kernels/xtensa/depthwise_conv_vision.cc \
-  tensorflow/lite/micro/kernels/xtensa/fully_connected_vision.cc \
-  tensorflow/lite/micro/kernels/xtensa/pad_vision.cc \
-  tensorflow/lite/micro/kernels/xtensa/pooling_vision.cc \
-  tensorflow/lite/micro/kernels/xtensa/reduce_hifi.cc \
-  tensorflow/lite/micro/kernels/xtensa/reduce_vision.cc \
-  tensorflow/lite/micro/kernels/xtensa/reshape_vision.cc \
-  tensorflow/lite/micro/kernels/xtensa/softmax_int8_int16.cc \
-  tensorflow/lite/micro/kernels/xtensa/lstm_eval_hifi.cc \
-  tensorflow/lite/micro/kernels/xtensa/softmax_vision.cc 
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/add_vision.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_hifi.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_int16_reference.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_int8_reference.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_vision.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/depthwise_conv_hifi.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/depthwise_conv_vision.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/fully_connected_common_xtensa.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/fully_connected_int8.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/fully_connected_int16.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/fully_connected_vision.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/pad_vision.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/pooling_int8.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/pooling_vision.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/reduce_hifi.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/reduce_vision.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/reshape_vision.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/softmax_int8_int16.cc \
+  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/softmax_vision.cc
 
-ifeq ($(TARGET_ARCH), hifi5)
-  DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_download.sh ${MAKEFILE_DIR}/downloads hifi5)
+ifeq ($(TARGET_ARCH), hifimini)
+  # hifimini optimizations are implemented in the TFLM repository itself.
+  THIRD_PARTY_KERNEL_CC_SRCS += \
+    $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/hifimini/svdf.cc \
+    $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/hifimini/fully_connected.cc
+
+else ifeq ($(TARGET_ARCH), hifi5)
+  DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_download.sh ${DOWNLOADS_DIR} hifi5 $(TENSORFLOW_ROOT))
   ifneq ($(DOWNLOAD_RESULT), SUCCESS)
     $(error Something went wrong with the xtensa download: $(DOWNLOAD_RESULT))
   endif
@@ -60,7 +69,7 @@ ifeq ($(TARGET_ARCH), hifi5)
 
 else ifeq ($(TARGET_ARCH), $(filter $(TARGET_ARCH), hifi4 hifi4_internal hifi3 hifi3z fusion_f1 hifi1))
 
-  DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_download.sh ${MAKEFILE_DIR}/downloads hifi4)
+  DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_download.sh ${DOWNLOADS_DIR} hifi4 $(TENSORFLOW_ROOT))
   ifneq ($(DOWNLOAD_RESULT), SUCCESS)
     $(error Something went wrong with the xtensa download: $(DOWNLOAD_RESULT))
   endif
@@ -100,7 +109,7 @@ else ifeq ($(TARGET_ARCH), $(filter $(TARGET_ARCH), hifi4 hifi4_internal hifi3 h
     -I$(NNLIB_PATH)/algo/ndsp/hifi4/include/
 
 else ifeq ($(TARGET_ARCH), vision_p6)
-  DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_download.sh ${MAKEFILE_DIR}/downloads vision_p6)
+  DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_download.sh ${DOWNLOADS_DIR} vision_p6 $(TENSORFLOW_ROOT))
   ifneq ($(DOWNLOAD_RESULT), SUCCESS)
     $(error Something went wrong with the xtensa download: $(DOWNLOAD_RESULT))
   endif
@@ -126,7 +135,7 @@ else ifeq ($(TARGET_ARCH), vision_p6)
   INCLUDES += \
     -I$(NNLIB_PATH)/flk/include \
     -I$(NNLIB_PATH)/kernels/include/ \
-    -I$(NNLIB_PATH)/runtime/include/ 
+    -I$(NNLIB_PATH)/runtime/include/
 
   LDFLAGS += -lidma
 else
@@ -143,4 +152,10 @@ THIRD_PARTY_KERNEL_CC_SRCS += \
 
 THIRD_PARTY_CC_HDRS += \
     $(shell find $(FFT_PATH)/hifi3_fft -name "*.h")
+else ifeq ($(TARGET_ARCH), hifimini)
+THIRD_PARTY_KERNEL_CC_SRCS += \
+    $(shell find $(FFT_PATH)/hifi2_fft -name "*.c")
+
+THIRD_PARTY_CC_HDRS += \
+    $(shell find $(FFT_PATH)/hifi2_fft -name "*.h")
 endif

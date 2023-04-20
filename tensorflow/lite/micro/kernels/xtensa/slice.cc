@@ -20,7 +20,7 @@ limitations under the License.
 #include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
 #include "tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
+#include "tensorflow/lite/micro/micro_log.h"
 #include "tensorflow/lite/micro/memory_helpers.h"
 #include "tensorflow/lite/micro/micro_utils.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
@@ -180,6 +180,13 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<int16_t>(output));
       break;
+    case kTfLiteBool:
+      reference_ops::Slice<bool>(op_params,
+                                 tflite::micro::GetTensorShape(input),
+                                 tflite::micro::GetTensorData<bool>(input),
+                                 tflite::micro::GetTensorShape(output),
+                                 tflite::micro::GetTensorData<bool>(output));
+      break;
     default:
       MicroPrintf("Input tensor type %s (%d) not supported.",
                   TfLiteTypeGetName(input->type), input->type);
@@ -190,7 +197,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace
 
-TfLiteRegistration Register_SLICE() {
+TfLiteRegistration_V1 Register_SLICE() {
   return tflite::micro::RegisterOp(nullptr, Prepare, Eval);
 }
 

@@ -1,4 +1,4 @@
-# Copyright 2022 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2023 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -97,13 +97,14 @@ ifeq ($(TOOLCHAIN), armclang)
   FLAGS_ARMC = \
     --target=arm-arm-none-eabi \
     -Wno-unused-private-field \
-    -mcpu=$(MCPU_OPTION)
+    -mcpu=$(MCPU_OPTION) \
+    -ffp-mode=full
 
   # Pass comma separated linker options to armlink
   ARMC6_LDFLAGS += -Wl,--strict,--summary_stderr,--info,summarysizes,--map
   ARMC6_LDFLAGS += -Wl,--load_addr_map_info,--xref,--callgraph,--symbols
   ARMC6_LDFLAGS += -Wl,--info,sizes,--info,totals,--info,unused,--info,veneers
-  ARMC6_LDFLAGS += -Wl,--list=${TENSORFLOW_ROOT}$(MAKEFILE_DIR)/gen/$(TARGET).map
+  ARMC6_LDFLAGS += -Wl,--list=${TENSORFLOW_ROOT}gen/$(TARGET).map
   ARMC6_LDFLAGS += -Wl,--entry=Reset_Handler  --verbose
   ARMC6_LDFLAGS += -Wl,--scatter=$(ETHOS_U_CORE_PLATFORM)/platform.scatter
 
@@ -147,7 +148,7 @@ else ifeq ($(TOOLCHAIN), gcc)
   LDFLAGS += \
     --specs=nosys.specs \
     -T $(ETHOS_U_CORE_PLATFORM)/platform_parsed.ld \
-    -Wl,-Map=${TENSORFLOW_ROOT}$(MAKEFILE_DIR)/gen/$(TARGET).map,--cref \
+    -Wl,-Map=${TENSORFLOW_ROOT}gen/$(TARGET).map,--cref \
     -Wl,--gc-sections \
     --entry Reset_Handler
 
@@ -175,7 +176,7 @@ CXXFLAGS += -D$(ARM_CPU)$(CMSIS_ARM_FEATURES)
 CCFLAGS += -D$(ARM_CPU)$(CMSIS_ARM_FEATURES)
 
 # For Ethos-U Core Driver. Header file name is depending on target architecture.
-CXXFLAGS += -DCMSIS_DEVICE_ARM_CORTEX_M_XX_HEADER_FILE=\"$(ARM_CPU).h\"
+CXXFLAGS += -DCMSIS_DEVICE_ARM_CORTEX_M_XX_HEADER_FILE=\"$(ARM_CPU)$(CMSIS_ARM_FEATURES).h\"
 
 THIRD_PARTY_CC_SRCS += \
   $(ETHOS_U_CORE_PLATFORM)/retarget.c \
@@ -198,7 +199,6 @@ INCLUDES += \
 EXCLUDED_TESTS := \
   tensorflow/lite/micro/memory_arena_threshold_test.cc  \
   tensorflow/lite/micro/recording_micro_allocator_test.cc
-  
 MICROLITE_TEST_SRCS := $(filter-out $(EXCLUDED_TESTS), $(MICROLITE_TEST_SRCS))
 
 TEST_SCRIPT := tensorflow/lite/micro/testing/test_with_arm_corstone_300.sh

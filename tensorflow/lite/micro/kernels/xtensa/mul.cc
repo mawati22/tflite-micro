@@ -25,7 +25,7 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 #include "tensorflow/lite/micro/memory_helpers.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
+#include "tensorflow/lite/micro/micro_log.h"
 
 namespace tflite {
 
@@ -137,6 +137,7 @@ TfLiteStatus MulEval(TfLiteContext* context, TfLiteNode* node) {
       EvalMulQuantizedReference(context, node, data, input1, input2, output);
 #endif
       break;
+    case kTfLiteInt16:
     case kTfLiteInt32:
         EvalMulQuantizedReference(context, node, data, input1, input2, output);
       break;
@@ -159,7 +160,7 @@ TfLiteStatus MulEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 }
 
-TfLiteRegistration Register_MUL() {
+TfLiteRegistration_V1 Register_MUL() {
   return tflite::micro::RegisterOp(MulInit, MulPrepare, MulEval);
 }
 

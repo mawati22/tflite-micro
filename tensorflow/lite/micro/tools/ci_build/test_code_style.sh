@@ -44,8 +44,8 @@ tensorflow/lite/micro/tools/make/downloads/pigweed/pw_presubmit/py/pw_presubmit/
   -p copyright_notice \
   -e kernels/internal/reference/integer_ops/ \
   -e kernels/internal/reference/reference_ops.h \
-  -e tensorflow/lite/micro/python/tflite_size/src/schema_generated_with_reflective_type.h \
   -e python/schema_py_generated.py \
+  -e python_requirements.in \
   -e tools/make/downloads \
   -e tools/make/targets/ecm3531 \
   -e BUILD\
@@ -93,7 +93,6 @@ tensorflow/lite/micro/tools/make/downloads/pigweed/pw_presubmit/py/pw_presubmit/
   -e experimental \
   -e schema/schema_generated.h \
   -e schema/schema_utils.h \
-  -e tensorflow/lite/micro/python/tflite_size/src/schema_generated_with_reflective_type.h \
   -e "\.inc" \
   -e "\.md"
 

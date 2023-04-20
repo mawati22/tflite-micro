@@ -27,7 +27,7 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa_add.h"
 #include "tensorflow/lite/micro/memory_helpers.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
+#include "tensorflow/lite/micro/micro_log.h"
 
 namespace tflite {
 
@@ -40,49 +40,81 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 }
 
-TfLiteStatus EvalAdd(TfLiteContext* context, TfLiteNode* node, TfLiteAddParams* params,
-             const OpDataAdd* data, const TfLiteEvalTensor* input1,
-             const TfLiteEvalTensor* input2, TfLiteEvalTensor* output) {
-  // printf("MCP DEBUG EvalAdd\n");
-  tflite::ArithmeticParams op_params;
-  SetActivationParams(data->output_activation_min_f32,
-                      data->output_activation_max_f32, &op_params);
-  if (data->requires_broadcast) {
-    reference_ops::BroadcastAdd4DSlow(
-        op_params, tflite::micro::GetTensorShape(input1),
-        tflite::micro::GetTensorData<float>(input1),
-        tflite::micro::GetTensorShape(input2),
-        tflite::micro::GetTensorData<float>(input2),
-        tflite::micro::GetTensorShape(output),
-        tflite::micro::GetTensorData<float>(output));
-  } else {
+TfLiteStatus EvalAdd(TfLiteContext* context, TfLiteNode* node,
+                     TfLiteAddParams* params, const OpDataAdd* data,
+                     const TfLiteEvalTensor* input1,
+                     const TfLiteEvalTensor* input2, TfLiteEvalTensor* output) {
+  switch (output->type) {
+    case kTfLiteFloat32: {
+      tflite::ArithmeticParams op_params;
+      SetActivationParams(data->output_activation_min_f32,
+                          data->output_activation_max_f32, &op_params);
+      if (data->requires_broadcast) {
+        reference_ops::BroadcastAdd4DSlow(
+            op_params, tflite::micro::GetTensorShape(input1),
+            tflite::micro::GetTensorData<float>(input1),
+            tflite::micro::GetTensorShape(input2),
+            tflite::micro::GetTensorData<float>(input2),
+            tflite::micro::GetTensorShape(output),
+            tflite::micro::GetTensorData<float>(output));
+      } else {
 #if HIFI_VFPU
-    int err;
-    const RuntimeShape& input1_shape = tflite::micro::GetTensorShape(input1);
-    const RuntimeShape& input2_shape = tflite::micro::GetTensorShape(input2);
-    const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
-    const int flat_size =
-        MatchingElementsSize(input1_shape, input2_shape, output_shape);
+        int err;
+        const RuntimeShape& input1_shape = tflite::micro::GetTensorShape(input1);
+        const RuntimeShape& input2_shape = tflite::micro::GetTensorShape(input2);
+        const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
+        const int flat_size =
+            MatchingElementsSize(input1_shape, input2_shape, output_shape);
 
-    err = xa_nn_elm_add_f32xf32_f32(tflite::micro::GetTensorData<float>(output),
-                                    tflite::micro::GetTensorData<float>(input1),
-                                    tflite::micro::GetTensorData<float>(input2), flat_size);
+        err = xa_nn_elm_add_f32xf32_f32(tflite::micro::GetTensorData<float>(output),
+                                        tflite::micro::GetTensorData<float>(input1),
+                                        tflite::micro::GetTensorData<float>(input2),
+                                        flat_size);
 
-    TF_LITE_ENSURE(context, err == 0);
+        TF_LITE_ENSURE(context, err == 0);
 
-    err = xa_nn_vec_activation_min_max_f32_f32(
-        tflite::micro::GetTensorData<float>(output), tflite::micro::GetTensorData<float>(output),
-        data->output_activation_min_f32, data->output_activation_max_f32, flat_size);
+        err = xa_nn_vec_activation_min_max_f32_f32(
+            tflite::micro::GetTensorData<float>(output),
+            tflite::micro::GetTensorData<float>(output),
+            data->output_activation_min_f32, data->output_activation_max_f32,
+            flat_size);
 
-    TF_LITE_ENSURE(context, err == 0);
+        TF_LITE_ENSURE(context, err == 0);
 #else
-    reference_ops::Add(op_params, tflite::micro::GetTensorShape(input1),
-                       tflite::micro::GetTensorData<float>(input1),
-                       tflite::micro::GetTensorShape(input2),
-                       tflite::micro::GetTensorData<float>(input2),
-                       tflite::micro::GetTensorShape(output),
-                       tflite::micro::GetTensorData<float>(output));
+        reference_ops::Add(op_params, tflite::micro::GetTensorShape(input1),
+                           tflite::micro::GetTensorData<float>(input1),
+                           tflite::micro::GetTensorShape(input2),
+                           tflite::micro::GetTensorData<float>(input2),
+                           tflite::micro::GetTensorShape(output),
+                           tflite::micro::GetTensorData<float>(output));
 #endif // HIFI_VFPU
+      }
+    } break;
+    case kTfLiteInt32: {
+      tflite::ArithmeticParams op_params;
+      SetActivationParams(std::numeric_limits<int32_t>::lowest(),
+                          std::numeric_limits<int32_t>::max(), &op_params);
+      if (data->requires_broadcast) {
+        reference_ops::BroadcastAdd4DSlow(
+            op_params, tflite::micro::GetTensorShape(input1),
+            tflite::micro::GetTensorData<int32_t>(input1),
+            tflite::micro::GetTensorShape(input2),
+            tflite::micro::GetTensorData<int32_t>(input2),
+            tflite::micro::GetTensorShape(output),
+            tflite::micro::GetTensorData<int32_t>(output));
+      } else {
+        reference_ops::Add(op_params, tflite::micro::GetTensorShape(input1),
+                           tflite::micro::GetTensorData<int32_t>(input1),
+                           tflite::micro::GetTensorShape(input2),
+                           tflite::micro::GetTensorData<int32_t>(input2),
+                           tflite::micro::GetTensorShape(output),
+                           tflite::micro::GetTensorData<int32_t>(output));
+      }
+    } break;
+    default:
+      MicroPrintf("Type %s (%d) not supported.",
+                  TfLiteTypeGetName(output->type), output->type);
+      return kTfLiteError;
   }
   return kTfLiteOk;
 }
@@ -142,7 +174,7 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
           op_params.input2_multiplier, op_params.left_shift);
 
       TF_LITE_ENSURE(context, err == 0);
-#else // #if defined(VISION_P6)
+#else                 // defined(VISION_P6)
       if (need_broadcast) {
         reference_integer_ops::BroadcastAdd4DSlow(
             op_params, tflite::micro::GetTensorShape(input1),
@@ -160,7 +192,7 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorShape(output),
             tflite::micro::GetTensorData<int8_t>(output));
       }
-#endif // #if (defined(VISION_P6)
+#endif                // defined(VISION_P6)
       break;
     }
     case kTfLiteInt16: {
@@ -183,9 +215,9 @@ TfLiteStatus EvalAddQuantized(TfLiteContext* context, TfLiteNode* node,
           extended_input1_shape.DimsData(), op_params.input1_offset,
           op_params.input1_shift, op_params.input1_multiplier,
           tflite::micro::GetTensorData<int16_t>(input2),
-          extended_input2_shape.DimsData(),
-          op_params.input2_offset, op_params.input2_shift,
-          op_params.input2_multiplier, op_params.left_shift);
+          extended_input2_shape.DimsData(), op_params.input2_offset,
+          op_params.input2_shift, op_params.input2_multiplier,
+          op_params.left_shift);
 
       TF_LITE_ENSURE(context, err == 0);
 #else // #if defined(HIFI4) || defined(HIFI5)
@@ -245,8 +277,9 @@ TfLiteStatus AddEval(TfLiteContext* context, TfLiteNode* node) {
   TfLiteEvalTensor* output =
       tflite::micro::GetEvalOutput(context, node, kAddOutputTensor);
 
-  if (output->type == kTfLiteFloat32) {
-    TF_LITE_ENSURE_OK(context, EvalAdd(context, node, params, data, input1, input2, output));
+  if (output->type == kTfLiteFloat32 || output->type == kTfLiteInt32) {
+    TF_LITE_ENSURE_OK(
+        context, EvalAdd(context, node, params, data, input1, input2, output));
   } else if (output->type == kTfLiteInt8 || output->type == kTfLiteInt16) {
     TF_LITE_ENSURE_OK(context, EvalAddQuantized(context, node, params, data,
                                                 input1, input2, output));
@@ -259,7 +292,7 @@ TfLiteStatus AddEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 }
 
-TfLiteRegistration Register_ADD() {
+TfLiteRegistration_V1 Register_ADD() {
   return tflite::micro::RegisterOp(AddInit, Prepare, AddEval);
 }
 

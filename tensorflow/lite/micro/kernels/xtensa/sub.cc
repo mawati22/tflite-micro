@@ -27,7 +27,7 @@ limitations under the License.
 #include "tensorflow/lite/kernels/op_macros.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
+#include "tensorflow/lite/micro/micro_log.h"
 
 namespace tflite {
 
@@ -81,11 +81,13 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
   op_params.output_shift = data->output_shift;
   SetActivationParams(data->output_activation_min, data->output_activation_max,
                       &op_params);
+  // TODO(b/259724572): vision_p6 and hifi code path is getting very confusing.
+  // Let's separate them into two different files.
 #if !(defined(HIFI4) || defined(HIFI5))
   bool need_broadcast = reference_ops::ProcessBroadcastShapes(
       tflite::micro::GetTensorShape(input1),
       tflite::micro::GetTensorShape(input2), &op_params);
-#endif
+#endif  // !(defined(HIFI4) || defined(HIFI5))
 
   switch (output->type) {
     case kTfLiteInt8: {
@@ -100,23 +102,23 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
       const int* input1_dims = extended_input1_shape.DimsData();
       const int* input2_dims = extended_input2_shape.DimsData();
       const int* output_dims = extended_output_shape.DimsData();
+      // TODO(b/259724572): Refactor the following block of code.
       int b;
       int inp1_off = 0;
       int inp2_off = 0;
       int out_off;
-      out_off = output_dims[1] * output_dims[2] * output_dims[3]
-                    * output_dims[4];
-      if(input1_dims[0] > 1) {
-        inp1_off = input1_dims[1] * input1_dims[2] * input1_dims[3]
-                      * input1_dims[4];
+      out_off =
+          output_dims[1] * output_dims[2] * output_dims[3] * output_dims[4];
+      if (input1_dims[0] > 1) {
+        inp1_off =
+            input1_dims[1] * input1_dims[2] * input1_dims[3] * input1_dims[4];
       }
-      if(input2_dims[0] > 1) {
-        inp2_off = input2_dims[1] * input2_dims[2] * input2_dims[3]
-                      * input2_dims[4];
+      if (input2_dims[0] > 1) {
+        inp2_off =
+            input2_dims[1] * input2_dims[2] * input2_dims[3] * input2_dims[4];
       }
 
-      for(b = 0; b < output_dims[0]; b++)
-      {
+      for (b = 0; b < output_dims[0]; b++) {
         err = xa_nn_elm_sub_broadcast_4D_asym8sxasym8s_asym8s(
             tflite::micro::GetTensorData<int8_t>(output) + b * out_off,
             output_dims + 1, op_params.output_offset, op_params.output_shift,
@@ -125,8 +127,8 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorData<int8_t>(input1) + b * inp1_off,
             input1_dims + 1, op_params.input1_offset, op_params.input1_shift,
             op_params.input1_multiplier,
-            tflite::micro::GetTensorData<int8_t>(input2),
-            input2_dims + 1, op_params.input2_offset, op_params.input2_shift,
+            tflite::micro::GetTensorData<int8_t>(input2), input2_dims + 1,
+            op_params.input2_offset, op_params.input2_shift,
             op_params.input2_multiplier, op_params.left_shift);
 
         TF_LITE_ENSURE(context, err == 0);
@@ -168,19 +170,18 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
       int inp1_off = 0;
       int inp2_off = 0;
       int out_off;
-      out_off = output_dims[1] * output_dims[2] * output_dims[3]
-                    * output_dims[4];
-      if(input1_dims[0] > 1) {
-        inp1_off = input1_dims[1] * input1_dims[2] * input1_dims[3]
-                      * input1_dims[4];
+      out_off =
+          output_dims[1] * output_dims[2] * output_dims[3] * output_dims[4];
+      if (input1_dims[0] > 1) {
+        inp1_off =
+            input1_dims[1] * input1_dims[2] * input1_dims[3] * input1_dims[4];
       }
-      if(input2_dims[0] > 1) {
-        inp2_off = input2_dims[1] * input2_dims[2] * input2_dims[3]
-                      * input2_dims[4];
+      if (input2_dims[0] > 1) {
+        inp2_off =
+            input2_dims[1] * input2_dims[2] * input2_dims[3] * input2_dims[4];
       }
 
-      for(b = 0; b < output_dims[0]; b++)
-      {
+      for (b = 0; b < output_dims[0]; b++) {
         err = xa_nn_elm_sub_broadcast_4D_asym16sxasym16s_asym16s(
             tflite::micro::GetTensorData<int16_t>(output) + b * out_off,
             output_dims + 1, op_params.output_offset, op_params.output_shift,
@@ -189,8 +190,8 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorData<int16_t>(input1) + b * inp1_off,
             input1_dims + 1, op_params.input1_offset, op_params.input1_shift,
             op_params.input1_multiplier,
-            tflite::micro::GetTensorData<int16_t>(input2),
-            input2_dims + 1, op_params.input2_offset, op_params.input2_shift,
+            tflite::micro::GetTensorData<int16_t>(input2), input2_dims + 1,
+            op_params.input2_offset, op_params.input2_shift,
             op_params.input2_multiplier, op_params.left_shift);
 
         TF_LITE_ENSURE(context, err == 0);
@@ -251,7 +252,7 @@ TfLiteStatus SubEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 }
 
-TfLiteRegistration Register_SUB() {
+TfLiteRegistration_V1 Register_SUB() {
   return tflite::micro::RegisterOp(SubInit, SubPrepare, SubEval);
 }
 

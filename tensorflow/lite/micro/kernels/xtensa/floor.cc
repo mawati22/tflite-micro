@@ -21,9 +21,8 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 
 namespace tflite {
-namespace ops {
-namespace micro {
-namespace floor {
+
+namespace {
 
 constexpr int kInputTensor = 0;
 constexpr int kOutputTensor = 0;
@@ -56,12 +55,11 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 #endif // HIFI_VFPU
   return kTfLiteOk;
 }
-}  // namespace floor
 
-TfLiteRegistration Register_FLOOR() {
-  return tflite::micro::RegisterOp(nullptr, nullptr, floor::Eval);
+}  // namespace
+
+TfLiteRegistration_V1 Register_FLOOR() {
+  return tflite::micro::RegisterOp(nullptr, nullptr, Eval);
 }
 
-}  // namespace micro
-}  // namespace ops
 }  // namespace tflite

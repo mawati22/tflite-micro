@@ -27,6 +27,8 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/ceva/ceva_tflm_lib.h"
 #include "tensorflow/lite/micro/kernels/conv.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
+#include "tensorflow/lite/micro/micro_log.h"
+
 #ifdef MCPS_MEASUREMENT
 #include "tensorflow/lite/micro/kernels/ceva/mcps_macros.h"
 #endif
@@ -249,7 +251,7 @@ TfLiteStatus ConvEval(TfLiteContext* context, TfLiteNode* node) {
 }
 }  // namespace
 
-TfLiteRegistration Register_CONV_2D() {
+TfLiteRegistration_V1 Register_CONV_2D() {
   return tflite::micro::RegisterOp(Init, ConvPrepare, ConvEval);
 }
 

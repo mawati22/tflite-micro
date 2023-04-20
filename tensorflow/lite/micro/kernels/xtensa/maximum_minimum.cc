@@ -26,9 +26,7 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 
 namespace tflite {
-namespace ops {
-namespace micro {
-namespace maximum_minimum {
+
 namespace {
 
 // This file has the HiFi implementation of TFMaximum/TFMinimum.
@@ -65,8 +63,6 @@ struct MinimumOp {
     return el1 < el2 ? el1 : el2;
   }
 };
-
-}  // namespace maximum_minimum
 
 #if defined(HIFI5) || defined(HIFI4)
 namespace hifi {
@@ -311,34 +307,28 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 }
 
-}  // namespace maximum_minimum
+}  // namespace
 
-TfLiteRegistration Register_MAXIMUM() {
+TfLiteRegistration_V1 Register_MAXIMUM() {
   return tflite::micro::RegisterOp(
       nullptr, nullptr,
 #if defined(HIFI5) || defined(HIFI4)
-          maximum_minimum::Eval<maximum_minimum::kHiFi5,
-                                maximum_minimum::MaximumOp>
+          Eval<kHiFi5, MaximumOp>
 #else
-          maximum_minimum::Eval<maximum_minimum::kReference,
-                                maximum_minimum::MaximumOp>
+          Eval<kReference, MaximumOp>
 #endif
   );                                
 }
 
-TfLiteRegistration Register_MINIMUM() {
+TfLiteRegistration_V1 Register_MINIMUM() {
   return tflite::micro::RegisterOp(
       nullptr, nullptr,
 #if defined(HIFI5) || defined(HIFI4)
-          maximum_minimum::Eval<maximum_minimum::kHiFi5,
-                                maximum_minimum::MinimumOp>
+          Eval<kHiFi5, MinimumOp>
 #else
-          maximum_minimum::Eval<maximum_minimum::kReference,
-                                maximum_minimum::MinimumOp>
+          Eval<kReference, MinimumOp>
 #endif
   );                                
 }
 
-}  // namespace micro
-}  // namespace ops
 }  // namespace tflite
