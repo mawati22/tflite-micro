@@ -56,7 +56,7 @@ void TestIf(int* input1_dims_data, const bool* input1_data,
   params.then_subgraph_index = 1;
   params.else_subgraph_index = 2;
 
-  const TfLiteRegistration registration = tflite::Register_IF();
+  const TfLiteRegistration_V1 registration = tflite::Register_IF();
   micro::KernelRunner runner(registration, tensors, tensors_size, inputs_array,
                              outputs_array, &params);
 
@@ -114,12 +114,10 @@ TF_LITE_MICRO_TEST(IfShouldInvokeSubgraphConditionTrue) {
   const tflite::Model* model =
       tflite::testing::GetSimpleModelWithSubgraphsAndIf();
   tflite::MicroMutableOpResolver<3> resolver;
-  tflite::MicroErrorReporter reporter;
   resolver.AddIf();
   resolver.AddAdd();
   resolver.AddMul();
-  tflite::MicroInterpreter interpreter(model, resolver, arena, kArenaSize,
-                                       &reporter);
+  tflite::MicroInterpreter interpreter(model, resolver, arena, kArenaSize);
   TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk, interpreter.AllocateTensors());
   TfLiteTensor* condition = interpreter.input(0);
   TfLiteTensor* input1 = interpreter.input(1);
@@ -144,12 +142,10 @@ TF_LITE_MICRO_TEST(IfShouldInvokeSubgraphConditionFalse) {
   const tflite::Model* model =
       tflite::testing::GetSimpleModelWithSubgraphsAndIf();
   tflite::MicroMutableOpResolver<3> resolver;
-  tflite::MicroErrorReporter reporter;
   resolver.AddIf();
   resolver.AddAdd();
   resolver.AddMul();
-  tflite::MicroInterpreter interpreter(model, resolver, arena, kArenaSize,
-                                       &reporter);
+  tflite::MicroInterpreter interpreter(model, resolver, arena, kArenaSize);
   TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk, interpreter.AllocateTensors());
   TfLiteTensor* condition = interpreter.input(0);
   TfLiteTensor* input1 = interpreter.input(1);
@@ -176,9 +172,7 @@ TF_LITE_MICRO_TEST(IfShouldNotOverwriteTensorAcrossSubgraphs) {
 
   tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
   op_resolver.AddIf();
-  tflite::MicroErrorReporter reporter;
-  tflite::MicroInterpreter interpreter(model, op_resolver, arena, kArenaSize,
-                                       &reporter);
+  tflite::MicroInterpreter interpreter(model, op_resolver, arena, kArenaSize);
   TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk, interpreter.AllocateTensors());
 
   TfLiteTensor* condition = interpreter.input(0);

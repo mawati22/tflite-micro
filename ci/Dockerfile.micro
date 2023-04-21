@@ -46,14 +46,9 @@ RUN pip install matplotlib
 
 RUN pip install six
 
-# The following is necessary to build the Python interpreter
-# `PYTHON_BIN_PATH` is used by the pybind_library() bazel rule
-RUN export PYTHON_BIN_PATH=$(which python)
-RUN apt install -y python-numpy
-
 # Install Renode test dependencies
 RUN pip install pyyaml requests psutil robotframework==4.0.1
 
 COPY ci/*.sh /install/
-RUN /install/install_bazel.sh
+RUN /install/install_bazelisk.sh
 RUN /install/install_buildifier.sh

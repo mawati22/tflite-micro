@@ -1,11 +1,11 @@
 tensorflow/lite/builtin_op_data.h
 tensorflow/lite/builtin_ops.h
 tensorflow/lite/context_util.h
-tensorflow/lite/c/common.cc
 tensorflow/lite/core/api/error_reporter.cc
 tensorflow/lite/core/api/flatbuffer_conversions.cc
 tensorflow/lite/core/api/op_resolver.cc
 tensorflow/lite/core/api/tensor_utils.cc
+tensorflow/lite/core/c/common.cc
 tensorflow/lite/kernels/internal/quantization_util.cc
 tensorflow/lite/kernels/kernel_util.cc
 tensorflow/lite/schema/schema_utils.cc
@@ -16,9 +16,13 @@ tensorflow/lite/core/api/error_reporter.h
 tensorflow/lite/core/api/flatbuffer_conversions.h
 tensorflow/lite/core/api/op_resolver.h
 tensorflow/lite/core/api/tensor_utils.h
+tensorflow/lite/core/c/builtin_op_data.h
+tensorflow/lite/core/c/c_api_types.h
+tensorflow/lite/core/c/common.h
 tensorflow/lite/kernels/internal/common.h
 tensorflow/lite/kernels/internal/compatibility.h
 tensorflow/lite/kernels/internal/portable_tensor_utils.h
+tensorflow/lite/kernels/internal/portable_tensor_utils.cc
 tensorflow/lite/kernels/internal/quantization_util.h
 tensorflow/lite/kernels/internal/reference/add.h
 tensorflow/lite/kernels/internal/reference/add_n.h
@@ -82,6 +86,7 @@ tensorflow/lite/kernels/internal/reference/space_to_depth.h
 tensorflow/lite/kernels/internal/reference/sub.h
 tensorflow/lite/kernels/internal/reference/logistic.h
 tensorflow/lite/kernels/internal/reference/lstm_cell.h
+tensorflow/lite/kernels/internal/reference/select.h
 tensorflow/lite/kernels/internal/reference/slice.h
 tensorflow/lite/kernels/internal/reference/strided_slice.h
 tensorflow/lite/kernels/internal/reference/tanh.h
@@ -97,9 +102,7 @@ tensorflow/lite/kernels/internal/types.h
 tensorflow/lite/kernels/kernel_util.h
 tensorflow/lite/kernels/padding.h
 tensorflow/lite/portable_type_to_tflitetype.h
-tensorflow/lite/python/schema_py_generated.py
 tensorflow/lite/python/schema_util.py
-tensorflow/lite/schema/schema_generated.h
 tensorflow/lite/schema/schema_utils.h
 tensorflow/lite/schema/schema.fbs
 tensorflow/lite/tools/flatbuffer_utils.py

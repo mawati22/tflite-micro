@@ -1,4 +1,4 @@
-/* Copyright 2019 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2022 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,17 +19,14 @@ limitations under the License.
 
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/micro/examples/person_detection/model_settings.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/testing/micro_test.h"
 
 TF_LITE_MICRO_TESTS_BEGIN
 
 TF_LITE_MICRO_TEST(TestImageProvider) {
-  tflite::MicroErrorReporter micro_error_reporter;
-
   int8_t image_data[kMaxImageSize];
-  TfLiteStatus get_status = GetImage(&micro_error_reporter, kNumCols, kNumRows,
-                                     kNumChannels, image_data);
+  TfLiteStatus get_status =
+      GetImage(kNumCols, kNumRows, kNumChannels, image_data);
   TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk, get_status);
 
   // Make sure we can read all of the returned memory locations.
@@ -37,6 +34,7 @@ TF_LITE_MICRO_TEST(TestImageProvider) {
   for (int i = 0; i < kMaxImageSize; ++i) {
     total += image_data[i];
   }
+  (void)total;
 }
 
 TF_LITE_MICRO_TESTS_END

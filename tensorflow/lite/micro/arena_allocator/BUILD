@@ -18,7 +18,6 @@ cc_library(
     copts = micro_copts(),
     deps = [
         "//tensorflow/lite/c:common",
-        "//tensorflow/lite/core/api",
     ],
 )
 
@@ -33,7 +32,7 @@ cc_library(
         "//tensorflow/lite/micro:memory_helpers",
         "//tensorflow/lite/micro:micro_arena_constants",
         "//tensorflow/lite/micro:micro_compatibility",
-        "//tensorflow/lite/micro:micro_error_reporter",
+        "//tensorflow/lite/micro:micro_log",
     ],
 )
 
@@ -58,7 +57,7 @@ cc_library(
         "//tensorflow/lite/micro:memory_helpers",
         "//tensorflow/lite/micro:micro_arena_constants",
         "//tensorflow/lite/micro:micro_compatibility",
-        "//tensorflow/lite/micro:micro_error_reporter",
+        "//tensorflow/lite/micro:micro_log",
     ],
 )
 
@@ -87,7 +86,7 @@ cc_library(
         "//tensorflow/lite/micro:memory_helpers",
         "//tensorflow/lite/micro:micro_arena_constants",
         "//tensorflow/lite/micro:micro_compatibility",
-        "//tensorflow/lite/micro:micro_error_reporter",
+        "//tensorflow/lite/micro:micro_log",
     ],
 )
 
@@ -114,7 +113,6 @@ cc_library(
     copts = micro_copts(),
     deps = [
         ":simple_memory_allocator",
-        "//tensorflow/lite/core/api",
         "//tensorflow/lite/kernels/internal:compatibility",
         "//tensorflow/lite/micro:micro_compatibility",
         "//tensorflow/lite/micro:micro_framework",

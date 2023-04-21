@@ -19,9 +19,7 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 
 namespace tflite {
-namespace ops {
-namespace micro {
-namespace pack {
+
 namespace {
 
 constexpr int kOutputTensor = 0;
@@ -109,12 +107,9 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 }
 
 }  // namespace
-}  // namespace pack
 
-TfLiteRegistration Register_PACK() {
-  return tflite::micro::RegisterOp(nullptr, nullptr, pack::Eval);
+TfLiteRegistration_V1 Register_PACK() {
+  return tflite::micro::RegisterOp(nullptr, nullptr, Eval);
 }
 
-}  // namespace micro
-}  // namespace ops
 }  // namespace tflite

@@ -19,7 +19,7 @@ limitations under the License.
 
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/micro/all_ops_resolver.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
+#include "tensorflow/lite/micro/micro_log.h"
 #include "tensorflow/lite/micro/micro_profiler.h"
 #include "tensorflow/lite/micro/recording_micro_allocator.h"
 #include "tensorflow/lite/micro/recording_micro_interpreter.h"
@@ -52,7 +52,7 @@ void RunModel(const uint8_t* model,
   tflite::MicroMutableOpResolver<kNumberOperators> op_resolver = get_resolver();
 
   MicroInterpreter interpreter(GetModel(model), op_resolver, tensor_arena,
-                               kTensorArenaSize, GetMicroErrorReporter(),
+                               kTensorArenaSize,
                                nullptr, &profiler);
   interpreter.AllocateTensors();
 #if VERIFY_OUTPUT
@@ -75,7 +75,7 @@ void RunModel(const uint8_t* model,
   TfLiteTensor* output_tensor = interpreter.output(0);
   TF_LITE_MICRO_EXPECT_EQ(output_tensor->bytes,
                           golden_size * sizeof(int8_t));
-  int8_t* output = GetTensorData<int8_t>(output_tensor);
+  int8_t* output = ::tflite::GetTensorData<int8_t>(output_tensor);
   for (uint32_t i = 0; i < golden_size; i++) {
     // TODO(b/205046520): Better understand why TfLite and TFLM can sometimes be
     // off by 1.

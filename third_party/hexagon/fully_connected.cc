@@ -53,6 +53,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
 #include "tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
+#include "tensorflow/lite/micro/micro_log.h"
 #include "third_party/hexagon/hexagon_fully_connected.h"
 #include "third_party/hexagon/hexagon_tflm_translation_fully_connected.h"
 
@@ -122,7 +123,7 @@ TfLiteStatus HexagonFullyConnectedEval(TfLiteContext* context,
   return kTfLiteOk;
 }
 
-TfLiteRegistration Register_FULLY_CONNECTED() {
+TfLiteRegistration_V1 Register_FULLY_CONNECTED() {
   return tflite::micro::RegisterOp(HexagonFullyConnectedInit,
                                    HexagonFullyConnectedPrepare,
                                    HexagonFullyConnectedEval);
