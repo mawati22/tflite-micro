@@ -185,6 +185,37 @@ void EvalQuantizedSquaredDifferenceInt8Hifi(TfLiteContext* context,
       params.input2_offset, params.input2_shift,
       params.input2_multiplier, params.left_shift);
 }
+
+void EvalQuantizedSquaredDifferenceInt16Hifi(TfLiteContext* context,
+                                            TfLiteNode* node,
+                                            const OpData* data,
+                                            const TfLiteEvalTensor* input1,
+                                            const TfLiteEvalTensor* input2,
+                                            TfLiteEvalTensor* output) {
+  const auto* op_data = static_cast<const OpData*>(node->user_data);
+  const ArithmeticParams& params = op_data->arithmetic_params;
+  int err;
+  const RuntimeShape extended_input1_shape =
+      RuntimeShape::ExtendedShape(4, tflite::micro::GetTensorShape(input1));
+  const RuntimeShape extended_input2_shape =
+      RuntimeShape::ExtendedShape(4, tflite::micro::GetTensorShape(input2));
+  const RuntimeShape extended_output_shape =
+      RuntimeShape::ExtendedShape(4, tflite::micro::GetTensorShape(output));
+
+  err = xa_nn_elm_squared_diff_broadcast_4D_sym16sxsym16s_sym16s(
+      tflite::micro::GetTensorData<int16_t>(output),
+      extended_output_shape.DimsData(),
+      params.output_shift, params.output_multiplier,
+      params.quantized_activation_min,
+      params.quantized_activation_max,
+      tflite::micro::GetTensorData<int16_t>(input1),
+      extended_input1_shape.DimsData(),
+      params.input1_shift, params.input1_multiplier,
+      tflite::micro::GetTensorData<int16_t>(input2),
+      extended_input2_shape.DimsData(),
+      params.input2_shift, params.input2_multiplier,
+      params.left_shift);
+}
 #endif // #if !(defined(HIFI4) || defined(HIFI5))
 
 template <typename T>
@@ -287,8 +318,13 @@ TfLiteStatus SquaredDifferenceEval(TfLiteContext* context, TfLiteNode* node) {
                                            output);
 #endif
   } else if (output->type == kTfLiteInt16) {
+#if defined(HIFI4) || defined(HIFI5)
+    EvalQuantizedSquaredDifferenceInt16Hifi(context, node, data, input1, input2,
+                                           output);
+#else
     EvalQuantizedSquaredDifference<int16_t>(context, node, data, input1, input2,
                                             output);
+#endif
   } else {
     MicroPrintf(
         "SquaredDifference only supports FLOAT32, INT32 , INT16 and INT8 now, "
