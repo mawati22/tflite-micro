@@ -65,6 +65,28 @@ TfLiteStatus EvalMulQuantizedHiFi(TfLiteContext* context,
 
       TF_LITE_ENSURE(context, err == 0);
   }
+  if (output->type == kTfLiteInt16) {
+      int err;
+      const RuntimeShape extended_input1_shape =
+        RuntimeShape::ExtendedShape(4, tflite::micro::GetTensorShape(input1));
+      const RuntimeShape extended_input2_shape =
+        RuntimeShape::ExtendedShape(4, tflite::micro::GetTensorShape(input2));
+      const RuntimeShape extended_output_shape =
+        RuntimeShape::ExtendedShape(4, tflite::micro::GetTensorShape(output));
+
+      err = xa_nn_elm_mul_broadcast_4D_sym16sxsym16s_sym16s(
+          tflite::micro::GetTensorData<int16_t>(output),
+          extended_output_shape.DimsData(),
+          op_params.output_shift, op_params.output_multiplier,
+          op_params.quantized_activation_min,
+          op_params.quantized_activation_max,
+          tflite::micro::GetTensorData<int16_t>(input1),
+          extended_input1_shape.DimsData(),
+          tflite::micro::GetTensorData<int16_t>(input2),
+          extended_input2_shape.DimsData());
+
+      TF_LITE_ENSURE(context, err == 0);
+  }
   return kTfLiteOk;
 }
 
@@ -131,13 +153,13 @@ TfLiteStatus MulEval(TfLiteContext* context, TfLiteNode* node) {
 
   switch (input1->type) {
     case kTfLiteInt8:
+    case kTfLiteInt16:
 #if defined(HIFI4) || defined(HIFI5)
       EvalMulQuantizedHiFi(context, node, data, input1, input2, output);
 #else
       EvalMulQuantizedReference(context, node, data, input1, input2, output);
 #endif
       break;
-    case kTfLiteInt16:
     case kTfLiteInt32:
         EvalMulQuantizedReference(context, node, data, input1, input2, output);
       break;

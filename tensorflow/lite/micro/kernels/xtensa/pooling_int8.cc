@@ -42,7 +42,7 @@ TfLiteStatus AverageEvalInt8(TfLiteContext* context, TfLiteNode* node) {
     case kTfLiteInt8: {
 #if defined(HIFI5) || defined(HIFI4)
       auto* op_data = static_cast<const XtensaOpDataPooling*>(node->user_data);
-      AverageEvalQuantizedHifi(context, node, params, op_data, input, output);
+      AverageEvalQuantizedInt8Hifi(context, node, params, op_data, input, output);
 #elif defined(VISION_P6)
       const auto& op_data =
           *(reinterpret_cast<XtensaOpDataPooling*>(node->user_data));
@@ -111,45 +111,55 @@ TfLiteStatus AveragePrepareHifi(TfLiteContext* context, TfLiteNode* node) {
   TfLiteTensor* input =
       micro_context->AllocateTempInputTensor(node, kPoolingInputTensor);
 
+  const RuntimeShape& input_shape = GetTensorShape(input);
+  TfLiteTensor* output =
+      micro_context->AllocateTempInputTensor(node, kPoolingOutputTensor);
+  const RuntimeShape& output_shape = GetTensorShape(output);
+  micro_context->DeallocateTempTfLiteTensor(output);
+
+  const int depth = MatchingDim(input_shape, 3, output_shape, 3);
+  const int input_height = input_shape.Dims(1);
+  const int input_width = input_shape.Dims(2);
+  const int output_height = output_shape.Dims(1);
+  const int output_width = output_shape.Dims(2);
+
+  auto* params = reinterpret_cast<TfLitePoolParams*>(node->builtin_data);
+  auto* data = static_cast<XtensaOpDataPooling*>(node->user_data);
+
+  int required_scratch;
   if (input->type == kTfLiteInt8) {
-    const RuntimeShape& input_shape = GetTensorShape(input);
-    TfLiteTensor* output =
-        micro_context->AllocateTempInputTensor(node, kPoolingOutputTensor);
-    const RuntimeShape& output_shape = GetTensorShape(output);
-    micro_context->DeallocateTempTfLiteTensor(output);
-
-    const int depth = MatchingDim(input_shape, 3, output_shape, 3);
-    const int input_height = input_shape.Dims(1);
-    const int input_width = input_shape.Dims(2);
-    const int output_height = output_shape.Dims(1);
-    const int output_width = output_shape.Dims(2);
-
-    auto* params = reinterpret_cast<TfLitePoolParams*>(node->builtin_data);
-    auto* data = static_cast<XtensaOpDataPooling*>(node->user_data);
-
-    int required_scratch = xa_nn_avgpool_getsize(
-        depth, PREC_8, PREC_8, input_height, input_width, params->filter_height,
-        params->filter_width,
-        params->stride_width,                    // x_stride,
-        params->stride_height,                   // y_stride,
-        data->reference_op_data.padding.width,   // x_padding,
-        data->reference_op_data.padding.height,  // y_padding,
-        output_height, output_width, 0 /*NHWC input */, 0 /* NHWC output */);
-
-    if (required_scratch <= 0) {
-      MicroPrintf("Averagepool: xa_nn_avgpool_getsize failed");
-      return kTfLiteError;
-    }
+      required_scratch = xa_nn_avgpool_getsize(
+      depth, PREC_8, PREC_8, input_height, input_width, params->filter_height,
+      params->filter_width,
+      params->stride_width,                    // x_stride,
+      params->stride_height,                   // y_stride,
+      data->reference_op_data.padding.width,   // x_padding,
+      data->reference_op_data.padding.height,  // y_padding,
+      output_height, output_width, 0 /*NHWC input */, 0 /* NHWC output */);
+  }
+  if (input->type == kTfLiteInt16) {
+      required_scratch = xa_nn_avgpool_getsize(
+      depth, PREC_16, PREC_16, input_height, input_width, params->filter_height,
+      params->filter_width,
+      params->stride_width,                    // x_stride,
+      params->stride_height,                   // y_stride,
+      data->reference_op_data.padding.width,   // x_padding,
+      data->reference_op_data.padding.height,  // y_padding,
+      output_height, output_width, 0 /*NHWC input */, 0 /* NHWC output */);
+  }
+  if (required_scratch <= 0) {
+    MicroPrintf("Averagepool: xa_nn_avgpool_getsize failed");
+    return kTfLiteError;
+  }
 
     TF_LITE_ENSURE_STATUS(context->RequestScratchBufferInArena(
         context, required_scratch, &(data->scratch_tensor_index)));
-  }
 
   micro_context->DeallocateTempTfLiteTensor(input);
   return kTfLiteOk;
 }
 
-TfLiteStatus AverageEvalQuantizedHifi(TfLiteContext* context,
+TfLiteStatus AverageEvalQuantizedInt8Hifi(TfLiteContext* context,
                                       const TfLiteNode* node,
                                       const TfLitePoolParams* params,
                                       const XtensaOpDataPooling* data,
