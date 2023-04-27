@@ -52,7 +52,14 @@ TfLiteStatus PoolEvalVision(TfLiteContext* context, TfLiteNode* node,
 #if defined(HIFI5) || defined(HIFI4)
 
 TfLiteStatus AveragePrepareHifi(TfLiteContext* context, TfLiteNode* node);
-TfLiteStatus AverageEvalQuantizedHifi(TfLiteContext* context,
+TfLiteStatus AverageEvalQuantizedInt8Hifi(TfLiteContext* context,
+                                      const TfLiteNode* node,
+                                      const TfLitePoolParams* params,
+                                      const XtensaOpDataPooling* data,
+                                      const TfLiteEvalTensor* input,
+                                      TfLiteEvalTensor* output);
+
+TfLiteStatus AverageEvalQuantizedInt16Hifi(TfLiteContext* context,
                                       const TfLiteNode* node,
                                       const TfLitePoolParams* params,
                                       const XtensaOpDataPooling* data,

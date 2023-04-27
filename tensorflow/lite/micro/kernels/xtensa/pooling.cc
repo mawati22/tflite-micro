@@ -54,7 +54,7 @@ TfLiteStatus AverageEval(TfLiteContext* context, TfLiteNode* node) {
     }
     case kTfLiteInt8: {
 #if defined(HIFI5) || defined(HIFI4)
-      AverageEvalQuantizedHifi(context, node, params, op_data, input, output);
+      AverageEvalQuantizedInt8Hifi(context, node, params, op_data, input, output);
 #elif defined(VISION_P6)
       const auto& op_data =
           *(reinterpret_cast<XtensaOpDataPooling*>(node->user_data));
@@ -66,8 +66,12 @@ TfLiteStatus AverageEval(TfLiteContext* context, TfLiteNode* node) {
       break;
     }
     case kTfLiteInt16: {
+#if defined(HIFI5) || defined(HIFI4)
+      AverageEvalQuantizedInt16Hifi(context, node, params, op_data, input, output);
+#else      
       AveragePoolingEvalQuantized<int16_t>(context, node, params,
                                            reference_op_data, input, output);
+#endif                                           
       break;
     }
     default: {
