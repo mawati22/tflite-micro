@@ -44,11 +44,11 @@ void* XtensaInitReduce(TfLiteContext* context, const char* buffer,
 }
 
 TfLiteStatus XtensaPrepareMax(TfLiteContext* context, TfLiteNode* node) {
-#if 0 //defined(HIFI5) || defined(HIFI4)
-  return PrepareMaxHifi(context, node);
-#else
   OpDataReduce* op_data =
       &(static_cast<XtensaReduceOpData*>(node->user_data)->reference_op_data);
+#if defined(HIFI5) || defined(HIFI4)
+  return PrepareMaxHifi(context, node, op_data);
+#else
   TF_LITE_ENSURE_OK(context, PrepareMaxHelper(context, node, op_data));
 #if defined(VISION_P6)
   TF_LITE_ENSURE_OK(context, ReducePrepareVision(context, node));
@@ -58,34 +58,31 @@ TfLiteStatus XtensaPrepareMax(TfLiteContext* context, TfLiteNode* node) {
 }
 
 TfLiteStatus XtensaPrepareMeanOrSum(TfLiteContext* context, TfLiteNode* node) {
-#if 0 //defined(HIFI5) || defined(HIFI4)
-  return PrepareMeanOrSumHifi(context, node);
-#else
   OpDataReduce* op_data =
       &(static_cast<XtensaReduceOpData*>(node->user_data)->reference_op_data);
+#if defined(HIFI5) || defined(HIFI4)
+  return PrepareMeanOrSumHifi(context, node, op_data);
+#else
   return PrepareMeanOrSumHelper(context, node, op_data);
 #endif
 }
 
 TfLiteStatus XtensaEvalMean(TfLiteContext* context, TfLiteNode* node) {
-#if 0 //defined(HIFI5) || defined(HIFI4)
-  return EvalMeanHifi(context, node);
-#else
   OpDataReduce* op_data =
       &(static_cast<XtensaReduceOpData*>(node->user_data)->reference_op_data);
+#if defined(HIFI5) || defined(HIFI4)
+  return EvalMeanHifi(context, node, op_data);
+#else
   return EvalMeanHelper(context, node, op_data);
 #endif
 }
 
 TfLiteStatus XtensaEvalMax(TfLiteContext* context, TfLiteNode* node) {
-#if 0 // defined(HIFI5) || defined(HIFI4)
-  return EvalMaxHifi(context, node);
-#else  // defined(HIFI5) || defined(HIFI4)
-  XtensaReduceOpData* op_data_xtensa =
-      static_cast<XtensaReduceOpData*>(node->user_data);
-  OpDataReduce* op_data = &(op_data_xtensa->reference_op_data);
-
-#if defined(VISION_P6)
+  OpDataReduce* op_data =
+      &(static_cast<XtensaReduceOpData*>(node->user_data)->reference_op_data);
+#if defined(HIFI5) || defined(HIFI4)
+  return EvalMaxHifi(context, node, op_data);
+#elif defined(VISION_P6)
   const TfLiteEvalTensor* input = tflite::micro::GetEvalInput(context, node, 0);
   TfLiteEvalTensor* output = tflite::micro::GetEvalOutput(context, node, 0);
   TF_LITE_ENSURE_TYPES_EQ(context, input->type, output->type);
@@ -106,7 +103,6 @@ TfLiteStatus XtensaEvalMax(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteOk;
 #else
   return EvalMaxHelper(context, node, op_data);
-#endif
 #endif  // defined(HIFI5) || defined(HIFI4)
 }
 
