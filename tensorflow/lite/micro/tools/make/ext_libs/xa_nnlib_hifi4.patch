@@ -2273,7 +2273,7 @@ index 3ba344e..494a527 100644
        WORD32 is_pad_w = (pad_w > 0);
 diff --git a/algo/kernels/cnn/hifi4/xa_nn_transpose_conv_sym8sxasym8s.c b/algo/kernels/cnn/hifi4/xa_nn_transpose_conv_sym8sxasym8s.c
 new file mode 100644
-index 0000000..3722e66
+index 0000000..7265607
 --- /dev/null
 +++ b/algo/kernels/cnn/hifi4/xa_nn_transpose_conv_sym8sxasym8s.c
 @@ -0,0 +1,692 @@
@@ -2355,10 +2355,10 @@ index 0000000..3722e66
 +          for (int in_channel = 0; in_channel < input_depth; in_channel+=16)
 +          {
 +            ae_int16x4 d_inp, d_inp1, d_inp2, d_inp3;
-+            AE_L8X4F_IP(d_inp, (WORD8 *)pinp, sizeof(WORD32));
-+            AE_L8X4F_IP(d_inp1, (WORD8 *)pinp, sizeof(WORD32));
-+            AE_L8X4F_IP(d_inp2, (WORD8 *)pinp, sizeof(WORD32));
-+            AE_L8X4F_IP(d_inp3, (WORD8 *)pinp, sizeof(WORD32));
++            AE_L8X4F_IP(d_inp, pinp, sizeof(WORD32));
++            AE_L8X4F_IP(d_inp1, pinp, sizeof(WORD32));
++            AE_L8X4F_IP(d_inp2, pinp, sizeof(WORD32));
++            AE_L8X4F_IP(d_inp3, pinp, sizeof(WORD32));
 +            d_inp = AE_SRAI16(d_inp, 8);
 +            d_inp1 = AE_SRAI16(d_inp1, 8);
 +            d_inp2 = AE_SRAI16(d_inp2, 8);
@@ -2445,7 +2445,7 @@ index 0000000..3722e66
 +          for (int in_channel = 0; in_channel < input_depth; in_channel+=4)
 +          {
 +            ae_int16x4 d_inp;
-+            AE_L8X4F_IP(d_inp, (WORD8*)pinp, sizeof(WORD32));
++            AE_L8X4F_IP(d_inp, pinp, sizeof(WORD32));
 +            d_inp = AE_SRAI16(d_inp, 8);
 +            d_inp = AE_ADD16(d_inp, AE_MOVDA16(input_offset));
 +            for (int filter_y = filt_y_min; filter_y < filt_y_max; ++filter_y)
