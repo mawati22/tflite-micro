@@ -260,7 +260,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
               : *tflite::micro::GetTensorData<int16_t>(constant_values);
 #if defined(HIFI4) || defined(HIFI5)
       /* NNLib currently only supports upto 4D input tensors */
-      if (tflite::micro::GetTensorShape(input).DimensionsCount() == 4) {
+      if (tflite::micro::GetTensorShape(input).DimensionsCount() <= 4) {
         const TfLiteEvalTensor* paddings =
             tflite::micro::GetEvalInput(context, node, /*index=*/1);
         int32_t err = xa_nn_pad_16_16(
@@ -290,11 +290,39 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
           constant_values == nullptr
               ? 0
               : *tflite::micro::GetTensorData<int32_t>(constant_values);
+#if defined(HIFI4) || defined(HIFI5)
+  if(tflite::micro::GetTensorShape(input).DimensionsCount() <= 4)
+  {  
+      const TfLiteEvalTensor* paddings =
+          tflite::micro::GetEvalInput(context, node, /*index=*/1);
+      int32_t err = xa_nn_pad_32_32(
+          tflite::micro::GetTensorData<int32_t>(output),
+          tflite::micro::GetTensorShape(output).DimsData(),
+          tflite::micro::GetTensorData<int32_t>(input),
+          tflite::micro::GetTensorShape(input).DimsData(),
+          tflite::micro::GetTensorData<int32_t>(paddings),
+          tflite::micro::GetTensorShape(paddings).DimsData(),
+          tflite::micro::GetTensorShape(output).DimensionsCount(),
+          tflite::micro::GetTensorShape(input).DimensionsCount(),
+          tflite::micro::GetTensorShape(paddings).DimensionsCount(),
+          pad_value);
+      if (err != 0) return kTfLiteError;
+  }
+  else
+  {
+      reference_ops::Pad(data->params, tflite::micro::GetTensorShape(input),
+                        tflite::micro::GetTensorData<int32_t>(input),
+                        &pad_value, tflite::micro::GetTensorShape(output),
+                        tflite::micro::GetTensorData<int32_t>(output));    
+  }
+#else
       reference_ops::Pad(data->params, tflite::micro::GetTensorShape(input),
                          tflite::micro::GetTensorData<int32_t>(input),
                          &pad_value, tflite::micro::GetTensorShape(output),
                          tflite::micro::GetTensorData<int32_t>(output));
-    } break;
+#endif   
+    } 
+    break;
     default:
 
       MicroPrintf("Type %s not currently supported by Pad.",
