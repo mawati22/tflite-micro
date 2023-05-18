@@ -325,63 +325,63 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       int32_t* scratch_buffer = static_cast<int32_t*>(
           context->GetScratchBuffer(context, data.scratch_buffer_index));
 #if defined(HIFI4) || defined(HIFI5)
-        if(bias->type == kTfLiteInt32){
-          const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
-          const RuntimeShape& filter_shape =
-              tflite::micro::GetTensorShape(filter);
-          const RuntimeShape& output_shape =
-              tflite::micro::GetTensorShape(output);
-          const int stride_width = data.params.stride_width;
-          const int stride_height = data.params.stride_height;
-          const int pad_width = data.params.padding_values.width;
-          const int pad_height = data.params.padding_values.height;
+      if(bias->type == kTfLiteInt32){
+        const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
+        const RuntimeShape& filter_shape =
+            tflite::micro::GetTensorShape(filter);
+        const RuntimeShape& output_shape =
+            tflite::micro::GetTensorShape(output);
+        const int stride_width = data.params.stride_width;
+        const int stride_height = data.params.stride_height;
+        const int pad_width = data.params.padding_values.width;
+        const int pad_height = data.params.padding_values.height;
 
-          const int batches = MatchingDim(input_shape, 0, output_shape, 0);
-          const int input_depth = MatchingDim(input_shape, 3, filter_shape, 3);
-          const int output_depth = MatchingDim(filter_shape, 0, output_shape, 3);
+        const int batches = MatchingDim(input_shape, 0, output_shape, 0);
+        const int input_depth = MatchingDim(input_shape, 3, filter_shape, 3);
+        const int output_depth = MatchingDim(filter_shape, 0, output_shape, 3);
 
-          const int input_height = input_shape.Dims(1);
-          const int input_width = input_shape.Dims(2);
-          const int filter_height = filter_shape.Dims(1);
-          const int filter_width = filter_shape.Dims(2);
-          const int output_height = output_shape.Dims(1);
-          const int output_width = output_shape.Dims(2);
-          const int8_t* input_data =
-              tflite::micro::GetTensorData<int8_t>(input);
-          const int8_t* filter_data =
-              tflite::micro::GetTensorData<int8_t>(filter);
-          const int32_t* bias_data = tflite::micro::GetTensorData<int32_t>(bias);
-          int8_t* output_data = tflite::micro::GetTensorData<int8_t>(output);
+        const int input_height = input_shape.Dims(1);
+        const int input_width = input_shape.Dims(2);
+        const int filter_height = filter_shape.Dims(1);
+        const int filter_width = filter_shape.Dims(2);
+        const int output_height = output_shape.Dims(1);
+        const int output_width = output_shape.Dims(2);
+        const int8_t* input_data =
+            tflite::micro::GetTensorData<int8_t>(input);
+        const int8_t* filter_data =
+            tflite::micro::GetTensorData<int8_t>(filter);
+        const int32_t* bias_data = tflite::micro::GetTensorData<int32_t>(bias);
+        int8_t* output_data = tflite::micro::GetTensorData<int8_t>(output);
 
-          const int num_elements = output_shape.FlatSize();
+        const int num_elements = output_shape.FlatSize();
 
-          for (int b = 0; b < batches; b++) {
-            xa_nn_transpose_conv_sym8sxasym8s(
-                &output_data[b * output_height * output_width * output_depth],
-                const_cast<WORD8*>(
-                    &input_data[b * input_height * input_width * input_depth]),
-                const_cast<WORD8*>(filter_data), const_cast<WORD32*>(bias_data),
-                stride_width, stride_height, pad_width, pad_height, input_depth,
-                output_depth, input_height, input_width, filter_height,
-                filter_width, output_height, output_width, num_elements / batches,
-                data.params.input_offset, data.params.output_offset,
-                data.per_channel_output_shift, data.per_channel_output_multiplier,
-                scratch_buffer);
-          }
+        for (int b = 0; b < batches; b++) {
+          xa_nn_transpose_conv_sym8sxasym8s(
+              &output_data[b * output_height * output_width * output_depth],
+              const_cast<WORD8*>(
+                  &input_data[b * input_height * input_width * input_depth]),
+              const_cast<WORD8*>(filter_data), const_cast<WORD32*>(bias_data),
+              stride_width, stride_height, pad_width, pad_height, input_depth,
+              output_depth, input_height, input_width, filter_height,
+              filter_width, output_height, output_width, num_elements / batches,
+              data.params.input_offset, data.params.output_offset,
+              data.per_channel_output_shift, data.per_channel_output_multiplier,
+              scratch_buffer);
         }
-        else{
-          reference_integer_ops::TransposeConv(
-              data.params, data.per_channel_output_multiplier,
-              data.per_channel_output_shift, tflite::micro::GetTensorShape(input),
-              tflite::micro::GetTensorData<int8_t>(input),
-              tflite::micro::GetTensorShape(filter),
-              tflite::micro::GetTensorData<int8_t>(filter),
-              tflite::micro::GetTensorShape(bias),
-              tflite::micro::GetTensorData<int32_t>(bias),
-              tflite::micro::GetTensorShape(output),
-              tflite::micro::GetTensorData<int8_t>(output),
-              tflite::micro::GetTensorShape(nullptr), nullptr, scratch_buffer);          
-        }
+      }
+      else{
+        reference_integer_ops::TransposeConv(
+            data.params, data.per_channel_output_multiplier,
+            data.per_channel_output_shift, tflite::micro::GetTensorShape(input),
+            tflite::micro::GetTensorData<int8_t>(input),
+            tflite::micro::GetTensorShape(filter),
+            tflite::micro::GetTensorData<int8_t>(filter),
+            tflite::micro::GetTensorShape(bias),
+            tflite::micro::GetTensorData<int32_t>(bias),
+            tflite::micro::GetTensorShape(output),
+            tflite::micro::GetTensorData<int8_t>(output),
+            tflite::micro::GetTensorShape(nullptr), nullptr, scratch_buffer);          
+      }
 #else
       reference_integer_ops::TransposeConv(
           data.params, data.per_channel_output_multiplier,

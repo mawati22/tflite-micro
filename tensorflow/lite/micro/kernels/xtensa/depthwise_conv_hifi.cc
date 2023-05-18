@@ -84,11 +84,11 @@ TfLiteStatus DepthwiseConvPrepareHifi(TfLiteContext* context,
     int dilation_height = params.dilation_height_factor;
     int dilation_width  = params.dilation_width_factor; 
     if(input->type == kTfLiteInt8){
-    required_scratch = xa_nn_dilated_conv2d_depthwise_getsize(
-        input_height, input_width, input_depth, filter_height, filter_width,
-        depth_multiplier, dilation_height, dilation_width, stride_width, stride_height, pad_width, pad_height,
-        output_height, output_width, PREC_ASYM8S, 0 /* NHWC */);
-    TF_LITE_ENSURE(context, required_scratch > 0);        
+      required_scratch = xa_nn_dilated_conv2d_depthwise_getsize(
+      input_height, input_width, input_depth, filter_height, filter_width,
+      depth_multiplier, dilation_height, dilation_width, stride_width, stride_height, pad_width, pad_height,
+      output_height, output_width, PREC_ASYM8S, 0 /* NHWC */);
+      TF_LITE_ENSURE(context, required_scratch > 0);        
     }   
   }
   TF_LITE_ENSURE_OK(
