@@ -26,6 +26,9 @@ limitations under the License.
 #include "tensorflow/lite/micro/kernels/kernel_util.h"
 #include "tensorflow/lite/micro/kernels/xtensa/xtensa.h"
 #include "tensorflow/lite/micro/micro_utils.h"
+#if defined(USE_HIFI_ACT_TIE)
+#include <xtensa/tie/xt_hifi2.h>
+#endif
 
 namespace tflite {
 
@@ -106,9 +109,13 @@ TfLiteStatus CalculateArithmeticOpData(TfLiteContext* context, TfLiteNode* node,
       // The number 3.0 in the multiplier comes from here,
       // because the interval is [-10.7, 10.7] instead of [-8, 8].
       // So, in this scaling +/-2^17 represents +/-10.7.
-
+#if (defined(USE_HIFI_ACT_TIE) && (defined(AE_TANH16X4) || defined(AE_TANH16X4X2)))
+      double multiplier =
+          static_cast<double>(input->params.scale) * 4096.0;
+#else
       double multiplier =
           static_cast<double>(input->params.scale) * 4096.0 * 3.0;
+#endif          
       data->input_left_shift = 0;
 
       while (multiplier <= 32767.0 / 2.0 && data->input_left_shift <= 30) {
@@ -165,12 +172,21 @@ TfLiteStatus TanhEval(TfLiteContext* context, TfLiteNode* node) {
       return kTfLiteOk;
     } break;
     case kTfLiteInt16: {
+#if defined(HIFI4) || defined(HIFI5)
+      int32_t vec_len = MatchingFlatSize(tflite::micro::GetTensorShape(input), tflite::micro::GetTensorShape(output)); 
+      TF_LITE_ENSURE_EQ(context, xa_nn_vec_tanh_sym16s_sym16s(tflite::micro::GetTensorData<int16_t>(output),
+                           tflite::micro::GetTensorData<int16_t>(input),
+                            data.input_multiplier,
+                            data.input_left_shift,
+                            vec_len), 0);
+#else
       reference_integer_ops::Tanh(
           data.input_multiplier, data.input_left_shift,
           tflite::micro::GetTensorShape(input),
           tflite::micro::GetTensorData<int16_t>(input),
           tflite::micro::GetTensorShape(output),
           tflite::micro::GetTensorData<int16_t>(output));
+#endif  // defined(HIFI4) || defined(HIFI5)
       return kTfLiteOk;
     } break;
     case kTfLiteInt8: {

@@ -282,12 +282,29 @@ TfLiteStatus EvalXtensa(TfLiteContext* context, TfLiteNode* node) {
           break;
         }
         case kTfLiteInt16: {
+#if HIFI_VFPU && (defined(HIFI4) || defined(HIFI5))
+          int size = ElementCount(*input->dims);
+          int32_t zero_point = op_data->quantization_params.zero_point;
+          const float* input_data_ptr;
+          int16_t* output_data_ptr;
+          input_data_ptr = tflite::micro::GetTensorData<float>(input);
+          output_data_ptr = tflite::micro::GetTensorData<int16_t>(output);
+
+          TF_LITE_ENSURE_EQ(
+              context,
+              xa_nn_elm_quantize_f32_asym16s(
+                  output_data_ptr, input_data_ptr,
+                  static_cast<float>(op_data->quantization_params.scale),
+                  zero_point, size),
+              0);
+#else // #if HIFI_VFPU && (defined(HIFI4) || defined(HIFI5))             
           reference_ops::AffineQuantize(
               op_data->quantization_params,
               tflite::micro::GetTensorShape(input),
               tflite::micro::GetTensorData<float>(input),
               tflite::micro::GetTensorShape(output),
               tflite::micro::GetTensorData<int16_t>(output));
+#endif              
           break;
         }
 
