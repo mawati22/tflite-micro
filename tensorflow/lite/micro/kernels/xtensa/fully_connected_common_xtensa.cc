@@ -68,7 +68,8 @@ TfLiteStatus XtensaCalculateOpDataFullyConnected(
     // int8 quantization. See
     // https://github.com/tensorflow/tensorflow/issues/44912 for additional
     // context.
-    TFLITE_DCHECK(filter->params.zero_point == 0);
+    // Disabling filter ZP check to allow activations * activations FC in Transformer networks.
+    //TFLITE_DCHECK(filter->params.zero_point == 0);
 
     data->input_zero_point = input->params.zero_point;
     data->filter_zero_point = filter->params.zero_point;
