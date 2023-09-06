@@ -28,6 +28,8 @@ struct XtensaReduceOpData {
   OpDataReduce reference_op_data;
 
 #if defined(HIFI5) || defined(HIFI4)
+  int32_t updated_multiplier;
+  int32_t updated_shift;
   int scratch_tensor_index;
 #endif
 #if defined(VISION_P6)
