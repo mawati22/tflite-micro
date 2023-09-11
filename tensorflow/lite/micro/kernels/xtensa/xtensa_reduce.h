@@ -28,9 +28,9 @@ struct XtensaReduceOpData {
   OpDataReduce reference_op_data;
 
 #if defined(HIFI5) || defined(HIFI4)
+  int scratch_tensor_index;
   int32_t updated_multiplier;
   int32_t updated_shift;
-  int scratch_tensor_index;
 #endif
 #if defined(VISION_P6)
   uint8_t* p_context;  // persistent lib context for this instance saved here

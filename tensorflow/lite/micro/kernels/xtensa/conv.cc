@@ -49,7 +49,16 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE_OK(context, ConvPrepare(context, node));
 
 #if defined(HIFI4) || defined(HIFI5)
-  TF_LITE_ENSURE_OK(context, ConvPrepareHifi(context, node));
+#if defined(HIFI5) && defined(NNLIB_HIFI5)
+  const TfLiteEvalTensor* filter =
+      tflite::micro::GetEvalInput(context, node, kConvWeightsTensor);
+  const TfLiteEvalTensor* input =
+      tflite::micro::GetEvalInput(context, node, kConvInputTensor);      
+  if(input->type == kTfLiteInt8 && filter->type == kTfLiteInt4)
+    TF_LITE_ENSURE_OK(context, ConvPrepareInt4Hifi(context, node));
+  else
+#endif // defined(HIFI5) && defined(NNLIB_HIFI5)  
+    TF_LITE_ENSURE_OK(context, ConvPrepareHifi(context, node));
 #endif
 #if defined(VISION_P6)
   TF_LITE_ENSURE_OK(context, ConvPrepareVision(context, node));
@@ -77,15 +86,40 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
           ? tflite::micro::GetEvalInput(context, node, kConvBiasTensor)
           : nullptr;
 
-  TfLiteEvalTensor filter_int8 = tflite::micro::MakeUnpackedInt4Tensor(
-      context, op_data.reference_op_data.filter_buffer_index, filter);
-
   switch (input->type) {
     case kTfLiteInt8: {
-      switch (filter_int8.type) {
+      switch (filter->type) {
+        case kTfLiteInt4: {
+#if defined(HIFI5) && defined(NNLIB_HIFI5)         
+          ConvEvalInt4Hifi(context, node, params, op_data, input, filter,
+                       bias, output);
+#else // defined(HIFI5) && defined(NNLIB_HIFI5)   
+  TfLiteEvalTensor filter_int8 = tflite::micro::MakeUnpackedInt4Tensor(
+      context, op_data.reference_op_data.filter_buffer_index, filter);
+#if defined(HIFI4)
+          ConvEvalHifi(context, node, params, op_data, input, &filter_int8,
+                       bias, output);
+#else
+          reference_integer_ops::ConvPerChannel(
+              ConvParamsQuantized(params, op_data.reference_op_data),
+              op_data.reference_op_data.per_channel_output_multiplier,
+              op_data.reference_op_data.per_channel_output_shift,
+              tflite::micro::GetTensorShape(input),
+              tflite::micro::GetTensorData<int8_t>(input),
+              tflite::micro::GetTensorShape(filter),
+              tflite::micro::GetTensorData<int8_t>(&filter_int8),
+              tflite::micro::GetTensorShape(bias),
+              tflite::micro::GetOptionalTensorData<int32_t>(bias),
+              tflite::micro::GetTensorShape(output),
+              tflite::micro::GetTensorData<int8_t>(output));
+          return kTfLiteOk;
+#endif // defined(HIFI4)     
+#endif // defined(HIFI5) && defined(NNLIB_HIFI5)   
+          break;
+        }        
         case kTfLiteInt8: {
 #if defined(HIFI4) || defined(HIFI5)
-          ConvEvalHifi(context, node, params, op_data, input, &filter_int8,
+          ConvEvalHifi(context, node, params, op_data, input, filter,
                        bias, output);
 #elif defined(VISION_P6)
           return ConvEvalVision(context, node, params, op_data, input,
@@ -98,7 +132,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
               tflite::micro::GetTensorShape(input),
               tflite::micro::GetTensorData<int8_t>(input),
               tflite::micro::GetTensorShape(filter),
-              tflite::micro::GetTensorData<int8_t>(&filter_int8),
+              tflite::micro::GetTensorData<int8_t>(filter),
               tflite::micro::GetTensorShape(bias),
               tflite::micro::GetOptionalTensorData<int32_t>(bias),
               tflite::micro::GetTensorShape(output),

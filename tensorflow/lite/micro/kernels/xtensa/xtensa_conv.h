@@ -41,7 +41,17 @@ struct XtensaConvOpData {
 
 #if defined(HIFI4) || defined(HIFI5)
 TfLiteStatus ConvPrepareHifi(TfLiteContext* context, TfLiteNode* node);
+#if defined(HIFI5) && defined(NNLIB_HIFI5)
+TfLiteStatus ConvPrepareInt4Hifi(TfLiteContext* context, TfLiteNode* node);
 
+TfLiteStatus ConvEvalInt4Hifi(TfLiteContext* context, TfLiteNode* node,
+                          const TfLiteConvParams& params,
+                          const XtensaConvOpData& data,
+                          const TfLiteEvalTensor* input,
+                          const TfLiteEvalTensor* filter,
+                          const TfLiteEvalTensor* bias,
+                          TfLiteEvalTensor* output);
+#endif
 TfLiteStatus ConvEvalHifi(TfLiteContext* context, TfLiteNode* node,
                           const TfLiteConvParams& params,
                           const XtensaConvOpData& data,
