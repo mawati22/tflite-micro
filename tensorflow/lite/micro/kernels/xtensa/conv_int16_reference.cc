@@ -52,17 +52,39 @@ TfLiteStatus ConvReferenceEvalInt16(TfLiteContext* context, TfLiteNode* node) {
           ? tflite::micro::GetEvalInput(context, node, kConvBiasTensor)
           : nullptr;
 
-  reference_integer_ops::ConvPerChannel(
-      ConvParamsQuantized(params, op_data),
-      op_data.per_channel_output_multiplier, op_data.per_channel_output_shift,
-      tflite::micro::GetTensorShape(input),
-      tflite::micro::GetTensorData<int16_t>(input),
-      tflite::micro::GetTensorShape(filter),
-      tflite::micro::GetTensorData<int8_t>(filter),
-      tflite::micro::GetTensorShape(bias),
-      tflite::micro::GetTensorData<std::int64_t>(bias),
-      tflite::micro::GetTensorShape(output),
-      tflite::micro::GetTensorData<int16_t>(output));
+  switch (bias->type) {
+     case kTfLiteInt32: {
+       reference_integer_ops::ConvPerChannel(
+           ConvParamsQuantized(params, op_data),
+           op_data.per_channel_output_multiplier, op_data.per_channel_output_shift,
+           tflite::micro::GetTensorShape(input),
+           tflite::micro::GetTensorData<int16_t>(input),
+           tflite::micro::GetTensorShape(filter),
+           tflite::micro::GetTensorData<int8_t>(filter),
+           tflite::micro::GetTensorShape(bias),
+           tflite::micro::GetOptionalTensorData<std::int32_t>(bias),
+           tflite::micro::GetTensorShape(output),
+           tflite::micro::GetTensorData<int16_t>(output));
+       break;
+     }
+     case kTfLiteInt64: {
+       reference_integer_ops::ConvPerChannel(
+           ConvParamsQuantized(params, op_data),
+           op_data.per_channel_output_multiplier, op_data.per_channel_output_shift,
+           tflite::micro::GetTensorShape(input),
+           tflite::micro::GetTensorData<int16_t>(input),
+           tflite::micro::GetTensorShape(filter),
+           tflite::micro::GetTensorData<int8_t>(filter),
+           tflite::micro::GetTensorShape(bias),
+           tflite::micro::GetTensorData<std::int64_t>(bias),
+           tflite::micro::GetTensorShape(output),
+           tflite::micro::GetTensorData<int16_t>(output));
+       break;
+     }
+     default: {
+       return kTfLiteOk;
+     }
+  }
   return kTfLiteOk;
 }
 
