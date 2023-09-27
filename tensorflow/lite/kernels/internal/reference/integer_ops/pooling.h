@@ -20,6 +20,10 @@ limitations under the License.
 
 #include "tensorflow/lite/kernels/internal/common.h"
 
+#ifdef NNE2xx_OPT_AVGPOOL
+#include "tensorflow/lite/kernels/internal/quantization_util.h"
+#endif
+
 namespace tflite {
 namespace reference_integer_ops {
 
@@ -31,6 +35,15 @@ inline bool AveragePool(const PoolParams& params,
                    params.quantized_activation_max);
   TFLITE_DCHECK_EQ(input_shape.DimensionsCount(), 4);
   TFLITE_DCHECK_EQ(output_shape.DimensionsCount(), 4);
+  
+#ifdef NNE2xx_OPT_AVGPOOL
+  int32_t scale;
+  int shift;
+
+  QuantizeMultiplier((double)1/(double)(params.filter_height * params.filter_width),
+                     &scale, &shift);
+#endif
+  
   const int batches = MatchingDim(input_shape, 0, output_shape, 0);
   const int depth = MatchingDim(input_shape, 3, output_shape, 3);
   const int input_height = input_shape.Dims(1);
@@ -70,8 +83,12 @@ inline bool AveragePool(const PoolParams& params,
           }
           if (filter_count == 0) return false;
           // Round to the closest integer value.
+#ifdef NNE2xx_OPT_AVGPOOL
+          acc = MultiplyByQuantizedMultiplier(acc, scale, shift);
+#else             
           acc = acc > 0 ? (acc + filter_count / 2) / filter_count
                         : (acc - filter_count / 2) / filter_count;
+#endif                        
           acc = std::max(acc, params.quantized_activation_min);
           acc = std::min(acc, params.quantized_activation_max);
           output_data[Offset(output_shape, batch, out_y, out_x, channel)] =
@@ -145,6 +162,15 @@ inline bool AveragePool(const PoolParams& params,
                         const int16_t* input_data,
                         const RuntimeShape& output_shape,
                         int16_t* output_data) {
+                        
+#ifdef NNE2xx_OPT_AVGPOOL
+  int32_t scale;
+  int shift;
+
+  QuantizeMultiplier((double)1/(double)(params.filter_height * params.filter_width),
+                     &scale, &shift);
+#endif
+                        
   TFLITE_DCHECK_LE(params.quantized_activation_min,
                    params.quantized_activation_max);
   TFLITE_DCHECK_EQ(input_shape.DimensionsCount(), 4);
@@ -188,8 +214,13 @@ inline bool AveragePool(const PoolParams& params,
           }
           if (filter_count == 0) return false;
           // Round to the closest integer value.
+          
+#ifdef NNE2xx_OPT_AVGPOOL
+          acc = MultiplyByQuantizedMultiplier(acc, scale, shift);
+#else           
           acc = acc > 0 ? (acc + filter_count / 2) / filter_count
                         : (acc - filter_count / 2) / filter_count;
+#endif                        
           acc = std::max(acc, params.quantized_activation_min);
           acc = std::min(acc, params.quantized_activation_max);
           output_data[Offset(output_shape, batch, out_y, out_x, channel)] =
