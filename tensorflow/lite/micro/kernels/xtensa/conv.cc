@@ -117,18 +117,17 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
     }
     case kTfLiteInt16: {
 #if defined(HIFI4) || defined(HIFI5)
-      if (bias->type == kTfLiteInt64)
-      {
+      if (bias->type == kTfLiteInt64) {
         ConvEvalHifi16(context, node, params, op_data, input, filter, bias,
                        output);
       }
-      else if (bias->type == kTfLiteInt32)
+      else if (bias->type == kTfLiteInt32) {
+#else  // defined(HIFI4) || defined(HIFI5)
+      if (bias->type == kTfLiteInt64 || bias->type == kTfLiteInt32) {
 #endif  // defined(HIFI4) || defined(HIFI5)
-      {
         return ConvReferenceEvalInt16(context, node);
       }
-      else
-      {
+      else {
         MicroPrintf("Bias type %s (%d) not supported.",
                     TfLiteTypeGetName(bias->type), bias->type);
         return kTfLiteError;
