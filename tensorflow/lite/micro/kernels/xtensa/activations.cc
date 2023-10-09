@@ -75,14 +75,20 @@ TfLiteStatus ReluEval(TfLiteContext* context, TfLiteNode* node) {
       const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
       const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
       const int flat_size = MatchingFlatSize(input_shape, output_shape);
-      const int8_t zero = data.params.quantized_activation_min;
 
       inp_data_ptr = tflite::micro::GetTensorData<int8_t>(input);
       out_data_ptr = tflite::micro::GetTensorData<int8_t>(output);
 
-      err = xa_nn_vec_activation_min_max_8_8(
-          out_data_ptr, inp_data_ptr, zero, std::numeric_limits<int8_t>::max(),
-          flat_size);
+      err = xa_nn_vec_relu_asym8s_asym8s(out_data_ptr,
+                                         inp_data_ptr,
+                                         data.params.input_offset,
+                                         data.params.output_multiplier,
+                                         data.params.output_shift,
+                                         data.params.output_offset,
+                                         data.params.quantized_activation_min,
+                                         data.params.quantized_activation_max,
+                                         flat_size);
+
       TF_LITE_ENSURE(context, err == 0);
 #else
       tflite::ReluQuantized(data, tflite::micro::GetTensorShape(input),
