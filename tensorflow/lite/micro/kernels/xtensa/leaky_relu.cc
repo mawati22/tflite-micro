@@ -112,7 +112,7 @@ TfLiteStatus LeakyReluEval(TfLiteContext* context, TfLiteNode* node) {
       if (err != 0) return kTfLiteError;
 #else
       QuantizeLeakyRelu<int16_t>(data, input, output);
-#endif  // defined(HIFI4)
+#endif  // defined(HIFI3) || defined(HIFI4)
       return kTfLiteOk;
     } break;
     default:
@@ -124,7 +124,7 @@ TfLiteStatus LeakyReluEval(TfLiteContext* context, TfLiteNode* node) {
   return kTfLiteError;
 }
 
-TfLiteRegistration_V1 Register_LEAKY_RELU() {
+TFLMRegistration Register_LEAKY_RELU() {
   return tflite::micro::RegisterOp(LeakyReluInit, LeakyReluPrepare,
                                    LeakyReluEval);
 }

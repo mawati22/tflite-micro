@@ -126,7 +126,7 @@ TfLiteStatus AveragePrepareHifi(TfLiteContext* context, TfLiteNode* node) {
   auto* params = reinterpret_cast<TfLitePoolParams*>(node->builtin_data);
   auto* data = static_cast<XtensaOpDataPooling*>(node->user_data);
 
-  int required_scratch;
+  int required_scratch = 0;
   if (input->type == kTfLiteInt8) {
       required_scratch = xa_nn_avgpool_getsize(
       depth, PREC_8, PREC_8, input_height, input_width, params->filter_height,
@@ -147,13 +147,15 @@ TfLiteStatus AveragePrepareHifi(TfLiteContext* context, TfLiteNode* node) {
       data->reference_op_data.padding.height,  // y_padding,
       output_height, output_width, 0 /*NHWC input */, 0 /* NHWC output */);
   }
-  if (required_scratch <= 0) {
-    MicroPrintf("Averagepool: xa_nn_avgpool_getsize failed");
-    return kTfLiteError;
-  }
+  if (input->type == kTfLiteInt8 || input->type == kTfLiteInt16) {
+    if (required_scratch <= 0) {
+      MicroPrintf("Averagepool: xa_nn_avgpool_getsize failed");
+      return kTfLiteError;
+    }
 
-    TF_LITE_ENSURE_STATUS(context->RequestScratchBufferInArena(
-        context, required_scratch, &(data->scratch_tensor_index)));
+      TF_LITE_ENSURE_STATUS(context->RequestScratchBufferInArena(
+          context, required_scratch, &(data->scratch_tensor_index)));
+  }
 
   micro_context->DeallocateTempTfLiteTensor(input);
   return kTfLiteOk;
@@ -319,7 +321,7 @@ void* XtensaPoolingInit(TfLiteContext* context, const char* buffer,
 #endif
 }
 
-TfLiteRegistration_V1 Register_AVERAGE_POOL_2D_INT8() {
+TFLMRegistration Register_AVERAGE_POOL_2D_INT8() {
 #if defined(HIFI5) || defined(HIFI4)
   return tflite::micro::RegisterOp(XtensaPoolingInit, AveragePrepareHifi,
                                    AverageEvalInt8);
@@ -332,7 +334,7 @@ TfLiteRegistration_V1 Register_AVERAGE_POOL_2D_INT8() {
 #endif
 }
 
-TfLiteRegistration_V1 Register_MAX_POOL_2D_INT8() {
+TFLMRegistration Register_MAX_POOL_2D_INT8() {
 #if defined(HIFI5) || defined(HIFI4)
   return tflite::micro::RegisterOp(XtensaPoolingInit, MaxPrepareHifi,
                                    MaxEvalInt8);

@@ -309,7 +309,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace
 
-TfLiteRegistration_V1 Register_MAXIMUM() {
+TFLMRegistration Register_MAXIMUM() {
   return tflite::micro::RegisterOp(
       nullptr, nullptr,
 #if defined(HIFI5) || defined(HIFI4)
@@ -320,7 +320,7 @@ TfLiteRegistration_V1 Register_MAXIMUM() {
   );                                
 }
 
-TfLiteRegistration_V1 Register_MINIMUM() {
+TFLMRegistration Register_MINIMUM() {
   return tflite::micro::RegisterOp(
       nullptr, nullptr,
 #if defined(HIFI5) || defined(HIFI4)
