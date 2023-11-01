@@ -17,6 +17,7 @@ limitations under the License.
 
 namespace tflite {
 
+#if !TFLITE_SINGLE_ROUNDING
 int32_t MultiplyByQuantizedMultiplier(int32_t x, int32_t quantized_multiplier,
                                       int shift) {
   using gemmlowp::RoundingDivideByPOT;
@@ -51,5 +52,6 @@ int32_t MultiplyByQuantizedMultiplier(int64_t x, int32_t quantized_multiplier,
   int32_t result = x >> total_shift;
   return result;
 }
+#endif // #if !TFLITE_SINGLE_ROUNDING
 
 }  // namespace tflite
