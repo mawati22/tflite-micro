@@ -1,4 +1,4 @@
-/* Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2023 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ limitations under the License.
 #include "tensorflow/lite/micro/memory_helpers.h"
 #include "tensorflow/lite/micro/memory_planner/greedy_memory_planner.h"
 #include "tensorflow/lite/micro/memory_planner/non_persistent_buffer_planner_shim.h"
+#include "tensorflow/lite/micro/micro_allocator.h"
 #include "tensorflow/lite/micro/micro_arena_constants.h"
 #include "tensorflow/lite/micro/test_helpers.h"
 #include "tensorflow/lite/micro/testing/micro_test.h"
@@ -271,7 +272,9 @@ TF_LITE_MICRO_TEST(TestMissingQuantization) {
 
 TF_LITE_MICRO_TEST(TestFailsWhenModelStartsTwice) {
   const tflite::Model* model = tflite::testing::GetSimpleMockModel();
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   constexpr size_t arena_size = 1024;
   uint8_t arena[arena_size];
   tflite::MicroAllocator* allocator =
@@ -284,7 +287,9 @@ TF_LITE_MICRO_TEST(TestFailsWhenModelStartsTwice) {
 TF_LITE_MICRO_TEST(TestFailsWithWrongSequence) {
   const tflite::Model* model = tflite::testing::GetSimpleMockModel();
   tflite::ScratchBufferHandle* scratch_buffer_handles = nullptr;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   tflite::SubgraphAllocations* subgraph_allocations = nullptr;
   constexpr size_t arena_size = 1024;
   uint8_t arena[arena_size];
@@ -305,7 +310,9 @@ TF_LITE_MICRO_TEST(TestFailsWithWrongSequence) {
 TF_LITE_MICRO_TEST(TestMockModelAllocation) {
   const tflite::Model* model = tflite::testing::GetSimpleMockModel();
   tflite::ScratchBufferHandle* scratch_buffer_handles = nullptr;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   constexpr size_t arena_size = 1024 + 16;
   uint8_t arena[arena_size];
   tflite::MicroAllocator* allocator =
@@ -351,7 +358,9 @@ TF_LITE_MICRO_TEST(TestMockModelAllocation) {
 TF_LITE_MICRO_TEST(TestMockModelAllocationInTwoSeparateArenas) {
   const tflite::Model* model = tflite::testing::GetSimpleMockModel();
   tflite::ScratchBufferHandle* scratch_buffer_handles = nullptr;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   constexpr size_t arena_size = 1024;
   uint8_t persistent_arena[arena_size];
   uint8_t non_persistent_arena[arena_size];
@@ -395,7 +404,9 @@ TF_LITE_MICRO_TEST(TestMockModelAllocationInTwoSeparateArenas) {
 TF_LITE_MICRO_TEST(TestMockModelAllocationWithGivenMemoryPlanner) {
   const tflite::Model* model = tflite::testing::GetSimpleMockModel();
   tflite::ScratchBufferHandle* scratch_buffer_handles = nullptr;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   constexpr size_t arena_size = 1024;
   uint8_t arena[arena_size];
   tflite::GreedyMemoryPlanner memory_planner;
@@ -442,7 +453,9 @@ TF_LITE_MICRO_TEST(TestMockModelAllocationWithGivenMemoryPlanner) {
 TF_LITE_MICRO_TEST(TestMultiTenantAllocation) {
   // The `OpResolver` is shared among different models in this test for
   // simplicity but in practice you could have different `OpResolver`.
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
 
   // Create a shared allocator.
   constexpr size_t arena_size = 4096;
@@ -481,7 +494,9 @@ TF_LITE_MICRO_TEST(TestMultiTenantAllocation) {
 TF_LITE_MICRO_TEST(TestMultiTenantAllocationInTwoSeparateArenas) {
   // The `OpResolver` is shared among different models in this test for
   // simplicity but in practice you could have different `OpResolver`.
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
 
   // Create a shared allocator.
   constexpr size_t arena_size = 4096;
@@ -521,7 +536,9 @@ TF_LITE_MICRO_TEST(TestMultiTenantAllocationInTwoSeparateArenas) {
 TF_LITE_MICRO_TEST(TestAllocationForModelsWithBranches) {
   const tflite::Model* model = tflite::testing::GetSimpleModelWithBranch();
   tflite::ScratchBufferHandle* scratch_buffer_handles = nullptr;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   constexpr size_t arena_size = 4096;
   uint8_t arena[arena_size];
   tflite::MicroAllocator* allocator =
@@ -570,7 +587,9 @@ TF_LITE_MICRO_TEST(TestAllocationForModelsWithBranches) {
 TF_LITE_MICRO_TEST(TestAllocationForComplexModelAllocation) {
   const tflite::Model* model = tflite::testing::GetComplexMockModel();
   tflite::ScratchBufferHandle* scratch_buffer_handles = nullptr;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   constexpr size_t arena_size = 2048;
   uint8_t arena[arena_size];
   tflite::MicroAllocator* allocator =
@@ -632,7 +651,9 @@ TF_LITE_MICRO_TEST(OfflinePlannerBranchesAllOnline) {
   int version = 1;
   int subgraph = 0;
   constexpr int number_tensors = 4;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   const int32_t metadata_buffer[tflite::testing::kOfflinePlannerHeaderSize +
                                 number_tensors] = {version, subgraph,
                                                    number_tensors,  // header
@@ -699,7 +720,9 @@ TF_LITE_MICRO_TEST(OfflinePlannerBranchesAllOnline) {
 
 TF_LITE_MICRO_TEST(OfflinePlannerBasic) {
   constexpr int number_tensors = 4;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   const int32_t metadata_buffer[tflite::testing::kOfflinePlannerHeaderSize +
                                 number_tensors] = {1,         0, number_tensors,
                                                    /*t0=*/0,
@@ -749,7 +772,9 @@ TF_LITE_MICRO_TEST(OfflinePlannerBasic) {
 
 TF_LITE_MICRO_TEST(OfflinePlannerOverlappingAllocation) {
   constexpr int number_tensors = 4;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   const int32_t metadata_buffer[tflite::testing::kOfflinePlannerHeaderSize +
                                 number_tensors] = {/*version=*/1,
                                                    /*subgraph=*/0,
@@ -802,7 +827,9 @@ TF_LITE_MICRO_TEST(OfflinePlannerOverlappingAllocation) {
 
 TF_LITE_MICRO_TEST(OfflinePlannerOfflineOnline) {
   constexpr int number_tensors = 5;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   const int32_t metadata_buffer[tflite::testing::kOfflinePlannerHeaderSize +
                                 number_tensors] = {/*version=*/1,
                                                    /*subgraph=*/0,
@@ -885,6 +912,30 @@ TF_LITE_MICRO_TEST(TestAllocatePersistentTfLiteTensor) {
   // The address of tensor1 should be higher than the address of tensor2 since
   // persistent allocations take place in the tail which grows downward.
   TF_LITE_MICRO_EXPECT_GT(tensor1, tensor2);
+}
+
+TF_LITE_MICRO_TEST(TestFailAllocatePersistentTfLiteTensor) {
+  const tflite::Model* model = tflite::testing::GetSimpleMockModel();
+  // MicroAllocator::Create always allocates GreedyMemoryPlanner,
+  // SingleArenaBufferAllocator and MicroAllocator objects.
+  // Memory available should be <= the sum of the alignments which
+  // is < sizeof(TfLiteTensor).
+  constexpr size_t kArenaSize = sizeof(tflite::GreedyMemoryPlanner) +
+                                alignof(tflite::GreedyMemoryPlanner) +
+                                sizeof(tflite::MicroAllocator) +
+                                alignof(tflite::MicroAllocator) +
+                                sizeof(tflite::SingleArenaBufferAllocator) +
+                                alignof(tflite::SingleArenaBufferAllocator) +
+                                tflite::MicroArenaBufferAlignment();
+  uint8_t arena[kArenaSize];
+  tflite::MicroAllocator* allocator =
+      tflite::MicroAllocator::Create(arena, sizeof(arena));
+  TF_LITE_MICRO_EXPECT(allocator != nullptr);
+
+  TfLiteTensor* tensor1 = allocator->AllocatePersistentTfLiteTensor(
+      model, /*subgraph_allocations=*/nullptr, /*tensor_index=*/1,
+      /*subgraph_index=*/0);
+  TF_LITE_MICRO_EXPECT(tensor1 == nullptr);
 }
 
 TF_LITE_MICRO_TEST(TestAllocateSingleTempTfLiteTensor) {
@@ -999,7 +1050,9 @@ TF_LITE_MICRO_TEST(TestAllocateTfLiteTensorWithReset) {
 
 TF_LITE_MICRO_TEST(TestOperatorInputsNotInSubgraphInputs) {
   constexpr int number_tensors = 5;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   const int32_t metadata_buffer[tflite::testing::kOfflinePlannerHeaderSize +
                                 number_tensors] = {/*version=*/1,
                                                    /*subgraph=*/0,
@@ -1060,7 +1113,9 @@ TF_LITE_MICRO_TEST(TestOperatorInputsNotInSubgraphInputs) {
 
 TF_LITE_MICRO_TEST(TestTypicalFirstOpAndSecondOpWithScratchTensors) {
   constexpr int number_tensors = 6;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   const int32_t metadata_buffer[tflite::testing::kOfflinePlannerHeaderSize +
                                 number_tensors] = {/*version=*/1,
                                                    /*subgraph=*/0,
@@ -1126,7 +1181,9 @@ TF_LITE_MICRO_TEST(TestTypicalFirstOpAndSecondOpWithScratchTensors) {
 }
 
 TF_LITE_MICRO_TEST(TestModelWithUnusedTensors) {
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
 
   const tflite::Model* model = tflite::testing::GetModelWithUnusedInputs();
 
@@ -1162,7 +1219,9 @@ TF_LITE_MICRO_TEST(TestModelWithUnusedTensors) {
 }
 
 TF_LITE_MICRO_TEST(TestModelWithUnusedOperatorOutputs) {
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
 
   const tflite::Model* model =
       tflite::testing::GetModelWithUnusedOperatorOutputs();
@@ -1225,7 +1284,9 @@ TF_LITE_MICRO_TEST(TestMockModelAllocationByNonPersistentMemoryPlannerShim) {
   tflite::NonPersistentMemoryPlannerShim planner(non_persistent_buffer_plan);
 
   tflite::ScratchBufferHandle* scratch_buffer_handles = nullptr;
-  tflite::AllOpsResolver op_resolver = tflite::testing::GetOpResolver();
+  tflite::testing::TestingOpResolver op_resolver;
+  TF_LITE_MICRO_EXPECT_EQ(kTfLiteOk,
+                          tflite::testing::GetTestingOpResolver(op_resolver));
   constexpr size_t arena_size = 1024;
   uint8_t arena[arena_size];
   tflite::MicroAllocator* allocator =

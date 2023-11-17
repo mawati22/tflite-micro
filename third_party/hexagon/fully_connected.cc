@@ -123,10 +123,14 @@ TfLiteStatus HexagonFullyConnectedEval(TfLiteContext* context,
   return kTfLiteOk;
 }
 
-TfLiteRegistration_V1 Register_FULLY_CONNECTED() {
+TFLMRegistration Register_FULLY_CONNECTED() {
   return tflite::micro::RegisterOp(HexagonFullyConnectedInit,
                                    HexagonFullyConnectedPrepare,
                                    HexagonFullyConnectedEval);
+}
+
+TFLMInferenceRegistration RegisterInference_FULLY_CONNECTED() {
+  return tflite::micro::RegisterOp(HexagonFullyConnectedEval);
 }
 
 }  // namespace tflite

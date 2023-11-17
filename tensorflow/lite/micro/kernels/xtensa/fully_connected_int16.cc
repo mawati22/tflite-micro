@@ -101,7 +101,7 @@ TfLiteStatus EvalInt16(TfLiteContext* context, TfLiteNode* node) {
 
 }  // namespace
 
-TfLiteRegistration_V1 Register_FULLY_CONNECTED_INT16() {
+TFLMRegistration Register_FULLY_CONNECTED_INT16() {
   return tflite::micro::RegisterOp(XtensaInitFullyConnected,
                                    XtensaPrepareFullyConnected, EvalInt16);
 }

@@ -1,0 +1,68 @@
+diff --git a/library/fft/fft/fft_real24x24_hifi4.c b/library/fft/fft/fft_real24x24_hifi4.c
+index 82f48e2..bdce59e 100644
+--- a/library/fft/fft/fft_real24x24_hifi4.c
++++ b/library/fft/fft/fft_real24x24_hifi4.c
+@@ -78,7 +78,7 @@
+   x,y           should not overlap
+   x,y           aligned on a 8-bytes boundary
+ -------------------------------------------------------------------------*/
+-DISCARD_FUN( int,
++DISCARD_FUN_FOR_NONVOID_RETURN( int,
+              fft_real24x24,
+              (f24* y,
+               int32_t* x,
+diff --git a/library/include/NatureDSP_types.h b/library/include/NatureDSP_types.h
+index 0069361..c0f411f 100644
+--- a/library/include/NatureDSP_types.h
++++ b/library/include/NatureDSP_types.h
+@@ -332,7 +332,9 @@ typedef struct tagComplex32_t
+   #define NASSERT(x) 
+   #define restrict 
+ #elif defined (COMPILER_XTENSA)
++#if !defined restrict
+   #define restrict __restrict
++#endif
+   #define onchip
+   #define NASSERT(x) {(void)__builtin_expect((x)!=0,1);}
+ #else
+diff --git a/library/include_private/common.h b/library/include_private/common.h
+index d647af4..25d0ca8 100644
+--- a/library/include_private/common.h
++++ b/library/include_private/common.h
+@@ -187,6 +187,10 @@ F_UNDERSCORE STRINGIZE(name) ":\n"          \
+ __attribute__ ((section ("/DISCARD/"))) \
+ retval_type name arglist \
+ {  }
++#define DISCARD_FUN_FOR_NONVOID_RETURN(retval_type,name,arglist) \
++__attribute__ ((section ("/DISCARD/"))) \
++retval_type name arglist \
++{ return (retval_type) 0; }
+ #endif
+ 
+ #ifdef __cplusplus
+diff --git a/library/fft/fft/fft_cplx_32x16_stages_scl3_r2_r3_r5_hifi4.c b/library/fft/fft/fft_cplx_32x16_stages_scl3_r2_r3_r5_hifi4.c
+index d8540c9..723aca9 100644
+--- a/library/fft/fft/fft_cplx_32x16_stages_scl3_r2_r3_r5_hifi4.c
++++ b/library/fft/fft/fft_cplx_32x16_stages_scl3_r2_r3_r5_hifi4.c
+@@ -383,7 +383,7 @@ int fft_32x16_stage_inner_scl3_DFT3(const int16_t *tw, const int32_t *x, int32_t
+ 
+       py_inc = (-2*_v + 1)* sizeof(ae_int32x2);
+       tw_inc = 0;
+-  #if (XCHAL_HW_VERSION >= 281090)
++  #if (XCHAL_SW_VERSION >= 1409000 && XCHAL_SW_VERSION < 1411000) || (XCHAL_HW_VERSION >= 281090)
+       AE_ADDICIRC((int *)flag, _v<<3, 1<<3);
+   #else
+       AE_ADDICIRC(flag, _v<<3, 1<<3);
+diff --git a/library/fft/fft/fft_cplx_stages_S3_radix2_3_5_32x32_hifi4.c b/library/fft/fft/fft_cplx_stages_S3_radix2_3_5_32x32_hifi4.c
+index 048a842..ec51781 100644
+--- a/library/fft/fft/fft_cplx_stages_S3_radix2_3_5_32x32_hifi4.c
++++ b/library/fft/fft/fft_cplx_stages_S3_radix2_3_5_32x32_hifi4.c
+@@ -368,7 +368,7 @@ int fft_stageS3_DFT3_32x32(const int32_t *tw, const int32_t *x, int32_t *y, int
+ 
+       py_inc = (-2*_v + 1)* sizeof(ae_int32x2);
+       tw_inc = -(int)sizeof(ae_int32x2);
+-    #if (XCHAL_HW_VERSION >= 281090)
++    #if (XCHAL_SW_VERSION >= 1409000 && XCHAL_SW_VERSION < 1411000) || (XCHAL_HW_VERSION >= 281090)
+       AE_ADDICIRC((int *)flag, _v<<3, 1<<3);
+     #else
+       AE_ADDICIRC(flag, _v<<3, 1<<3);
