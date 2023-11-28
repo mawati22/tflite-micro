@@ -159,7 +159,6 @@ TfLiteStatus ConvPrepareHifiInt4(TfLiteContext* context, TfLiteNode* node) {
             input_height, filter_depth, filter_height, filter_width, stride_height,
             pad_height, output_height, output_channels, PREC_ASYM8S);
         TF_LITE_ENSURE(context, required_scratch > 0);
-    printf("Scratch Size %d \n", required_scratch);
   }
   else
   {
@@ -477,7 +476,6 @@ TfLiteStatus ConvEvalHifiInt4(TfLiteContext* context, TfLiteNode* node,
       (params.dilation_height_factor == 1) &&
       (filter_depth == input_depth))
   {
-    printf("here ************************\n");
     void* p_scratch = static_cast<void*>(
       context->GetScratchBuffer(context, data.scratch_tensor_index));
 
