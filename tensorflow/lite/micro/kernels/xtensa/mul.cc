@@ -133,8 +133,9 @@ TfLiteStatus MulEval(TfLiteContext* context, TfLiteNode* node) {
   TfLiteEvalTensor* output =
       tflite::micro::GetEvalOutput(context, node, kMulOutputTensor);
 
+#if HIFI_VFPU
   bool need_broadcast;
-  if(input1->type == kTfLiteInt8 || input1->type == kTfLiteFloat32)
+  if(input1->type == kTfLiteFloat32)
   {
     tflite::ArithmeticParams op_params = {};
     op_params.quantized_activation_min = data->output_activation_min;
@@ -150,6 +151,7 @@ TfLiteStatus MulEval(TfLiteContext* context, TfLiteNode* node) {
         tflite::micro::GetTensorShape(input1),
         tflite::micro::GetTensorShape(input2), &op_params);
   }
+#endif
 
   switch (input1->type) {
     case kTfLiteInt8:
