@@ -45,10 +45,11 @@ else ifeq ($(TARGET_ARCH), hifi5)
     $(error Something went wrong with the xtensa download: $(DOWNLOAD_RESULT))
   endif
 
-  DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_ndsp_download.sh ${DOWNLOADS_DIR} hifi5 $(TENSORFLOW_ROOT))
-  ifneq ($(DOWNLOAD_RESULT), SUCCESS)
-    $(error Something went wrong with the xtensa ndsp download: $(DOWNLOAD_RESULT))
-  endif
+  # Disabling NDSP Lib download as it is not needed in nne_dev
+  # DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_ndsp_download.sh ${DOWNLOADS_DIR} hifi5 $(TENSORFLOW_ROOT))
+  # ifneq ($(DOWNLOAD_RESULT), SUCCESS)
+    # $(error Something went wrong with the xtensa ndsp download: $(DOWNLOAD_RESULT))
+  # endif
 
   # TODO(b/161489252): -Wno-shadow is only needed for xannlib. But since we do
   # not have separate cflags (or the concept of modular build targets) with the
@@ -106,13 +107,14 @@ else ifeq ($(TARGET_ARCH), $(filter $(TARGET_ARCH), hifi4 hifi4_internal hifi3 h
     $(error Something went wrong with the xtensa download: $(DOWNLOAD_RESULT))
   endif
 
+  # Disabling NDSP Lib download as it is not needed in nne_dev
   # NDSP Lib is only available for hifi4 right now
-  ifeq ($(TARGET_ARCH), $(filter $(TARGET_ARCH), hifi4))
-    DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_ndsp_download.sh ${DOWNLOADS_DIR} $(TARGET_ARCH) $(TENSORFLOW_ROOT))
-    ifneq ($(DOWNLOAD_RESULT), SUCCESS)
-      $(error Something went wrong with the xtensa ndsp download: $(DOWNLOAD_RESULT))
-    endif
-  endif
+  # ifeq ($(TARGET_ARCH), $(filter $(TARGET_ARCH), hifi4))
+    # DOWNLOAD_RESULT := $(shell $(MAKEFILE_DIR)/ext_libs/xtensa_ndsp_download.sh ${DOWNLOADS_DIR} $(TARGET_ARCH) $(TENSORFLOW_ROOT))
+    # ifneq ($(DOWNLOAD_RESULT), SUCCESS)
+      # $(error Something went wrong with the xtensa ndsp download: $(DOWNLOAD_RESULT))
+    # endif
+  # endif
 
   # TODO(b/161489252): -Wno-shadow is only needed for xannlib. But since we do
   # not have separate cflags (or the concept of modular build targets) with the
