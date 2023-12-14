@@ -127,8 +127,8 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorData<int8_t>(input1) + b * inp1_off,
             input1_dims + 1, op_params.input1_offset, op_params.input1_shift,
             op_params.input1_multiplier,
-            tflite::micro::GetTensorData<int8_t>(input2), input2_dims + 1,
-            op_params.input2_offset, op_params.input2_shift,
+            tflite::micro::GetTensorData<int8_t>(input2) + b * inp2_off,
+            input2_dims + 1, op_params.input2_offset, op_params.input2_shift,
             op_params.input2_multiplier, op_params.left_shift);
 
         TF_LITE_ENSURE(context, err == 0);
@@ -190,8 +190,8 @@ TfLiteStatus EvalSubQuantized(TfLiteContext* context, TfLiteNode* node,
             tflite::micro::GetTensorData<int16_t>(input1) + b * inp1_off,
             input1_dims + 1, op_params.input1_offset, op_params.input1_shift,
             op_params.input1_multiplier,
-            tflite::micro::GetTensorData<int16_t>(input2), input2_dims + 1,
-            op_params.input2_offset, op_params.input2_shift,
+            tflite::micro::GetTensorData<int16_t>(input2) + b * inp2_off,
+            input2_dims + 1, op_params.input2_offset, op_params.input2_shift,
             op_params.input2_multiplier, op_params.left_shift);
 
         TF_LITE_ENSURE(context, err == 0);
