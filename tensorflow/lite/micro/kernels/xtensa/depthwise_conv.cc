@@ -54,11 +54,13 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE(context, input != nullptr);
 
   // For int16 input, only fallback to the reference kernel is used
-  // so there is no need to prepare the Hifi/Vision kernel.
+  // so there is no need to prepare the Vision kernel.
+#if defined(VISION_P6)  
   if (input->type == kTfLiteInt16) {
     micro_context->DeallocateTempTfLiteTensor(input);
     return kTfLiteOk;
   }
+#endif
   micro_context->DeallocateTempTfLiteTensor(input);
 
 #if defined(HIFI3) || defined(HIFI4) || defined(HIFI5)
@@ -98,7 +100,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       switch (filter_int8.type) {
         case kTfLiteInt8: {
 #if defined(HIFI3) || defined(HIFI4) || defined(HIFI5)
-          DepthwiseConvEvalHifi(context, node, params, op_data, input,
+          DepthwiseConvEvalInt8Hifi(context, node, params, op_data, input,
                                 &filter_int8, bias, output);
 #elif defined(VISION_P6)
           DepthwiseConvEvalVision(context, node, params, op_data, input,
@@ -129,6 +131,10 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
     case kTfLiteInt16: {
       switch (filter->type) {
         case kTfLiteInt8: {
+#if defined(HIFI3) || defined(HIFI4) || defined(HIFI5)
+          DepthwiseConvEvalInt16Hifi(context, node, params, op_data, input,
+                                &filter_int8, bias, output);
+#else          
           reference_integer_ops::DepthwiseConvPerChannel(
               DepthwiseConvParamsQuantized(params, op_data.reference_op_data),
               op_data.reference_op_data.per_channel_output_multiplier,
@@ -141,6 +147,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
               tflite::micro::GetOptionalTensorData<int64_t>(bias),
               tflite::micro::GetTensorShape(output),
               tflite::micro::GetTensorData<int16_t>(output));
+#endif              
           break;
         }
         default:

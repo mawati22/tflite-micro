@@ -47,16 +47,29 @@ TfLiteStatus XtensaEvalFullyConnectedQuantizedInt16(
   const int accum_depth = filter_shape.Dims(filter_dim_count - 1);
 
   FullyConnectedParams op_params = FullyConnectedParamsQuantized(data);
-  for(int b = 0; b < num_batches; ++b) {
-    TF_LITE_ENSURE_EQ(
-        context,
-        xa_nn_fully_connected_sym8sxsym16s_sym16s(
-            (tflite::micro::GetTensorData<int16_t>(output) + b * output_depth),
-            tflite::micro::GetTensorData<int8_t>(filter),
-            (tflite::micro::GetTensorData<int16_t>(input) + b * accum_depth),
-            bias_data, accum_depth, output_depth,
-            op_params.output_multiplier, op_params.output_shift),
-        0);
+  if(num_batches == 1) {
+      TF_LITE_ENSURE_EQ(
+          context,
+          xa_nn_fully_connected_sym8sxsym16s_sym16s(
+              tflite::micro::GetTensorData<int16_t>(output),
+              tflite::micro::GetTensorData<int8_t>(filter),
+              tflite::micro::GetTensorData<int16_t>(input),
+              bias_data, accum_depth, output_depth,
+              op_params.output_multiplier, op_params.output_shift),
+          0);
+  }
+  else{
+      TF_LITE_ENSURE_EQ(
+          context,
+          xa_nn_matmul_sym8sxsym16s_sym16s(
+              tflite::micro::GetTensorData<int16_t>(output),
+              tflite::micro::GetTensorData<int8_t>(filter),
+              tflite::micro::GetTensorData<int16_t>(input),
+              bias_data, output_depth, accum_depth, accum_depth,
+              num_batches, accum_depth, output_depth, 1,
+              op_params.input_offset, op_params.output_multiplier, 
+              op_params.output_shift, op_params.output_offset),
+          0);    
   }
 
   int16_t* output_arr = tflite::micro::GetTensorData<int16_t>(output);

@@ -130,12 +130,18 @@ void AddElementWise(const int16_t* input_1, const int16_t* input_2, int n_batch,
 
 void AddElementWise(const float* input_1, const float* input_2, int n_batch,
                     int n_input, float* output) {
+#if defined(HIFI5) || defined(HIFI4)
+  WORD32 err;
+  err = xa_nn_elm_add_f32xf32_f32(output, input_1, input_2, n_batch * n_input);
+  (void)err;
+#else                      
   for (int batch = 0; batch < n_batch; ++batch) {
     for (int i = 0; i < n_input; ++i) {
       const int index = batch * n_input + i;
       output[index] = input_1[index] + input_2[index];
     }
   }
+#endif  
 }
 
 void Sigmoid(const RuntimeShape& data_shape, int16_t* data) {
@@ -154,7 +160,13 @@ void Sigmoid(const RuntimeShape& data_shape, int16_t* data) {
 }
 
 void Sigmoid(const RuntimeShape& data_shape, float* data) {
+#if defined(HIFI5) || defined(HIFI4)
+  WORD32 err;
+  err = xa_nn_vec_sigmoid_f32_f32(data, data, data_shape.FlatSize());
+  (void)err;
+#else  
   reference_ops::Logistic(data_shape, data, data_shape, data);
+#endif  
 }
 
 void Tanh(int32_t cell_state_scale_power, const RuntimeShape& input_data_shape,
@@ -313,19 +325,33 @@ void FullyConnected(const FullyConnectedParams& params,
 
 void Clipping(const int v_size, const CellStateInfo& cell_state_info,
               int16_t* vector) {
+#if defined(HIFI5) || defined(HIFI4)
+  WORD32 err;
+  err = xa_nn_vec_activation_min_max_16_16(vector, vector, -cell_state_info.quantized_cell_clip,
+                                      cell_state_info.quantized_cell_clip , v_size);
+  (void)err;
+#else               
   for (int i = 0; i < v_size; i++) {
     vector[i] =
         std::max(std::min(cell_state_info.quantized_cell_clip, vector[i]),
                  static_cast<int16_t>(-cell_state_info.quantized_cell_clip));
   }
+#endif  
 }
 
 void Clipping(const int v_size, const CellStateInfo& cell_state_info,
               float* vector) {
+#if defined(HIFI5) || defined(HIFI4)
+  WORD32 err;
+  err = xa_nn_vec_activation_min_max_f32_f32(vector, vector, -cell_state_info.cell_clip,
+                                      cell_state_info.cell_clip , v_size);
+  (void)err;
+#else                
   for (int i = 0; i < v_size; i++) {
     vector[i] = std::max(std::min(cell_state_info.cell_clip, vector[i]),
                          -cell_state_info.cell_clip);
   }
+#endif  
 }
 
 #if defined(HIFI5) || defined(HIFI4)
