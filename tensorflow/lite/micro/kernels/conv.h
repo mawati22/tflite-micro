@@ -112,6 +112,12 @@ inline TFLMRegistration Register_CONV_2D_INT8() { return Register_CONV_2D(); }
 inline TFLMRegistration Register_CONV_2D_INT16() { return Register_CONV_2D(); }
 #endif  // defined(CMSIS_NN) || defined(XTENSA)
 
+#if defined(XTENSA)
+
+TFLMRegistration Register_CONV_2D_FLOAT32();
+
+#endif
+
 }  // namespace tflite
 
 #endif  // TENSORFLOW_LITE_MICRO_KERNELS_CONV_H_
