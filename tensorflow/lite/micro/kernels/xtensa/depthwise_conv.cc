@@ -158,6 +158,26 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       }
       break;
     }
+    case kTfLiteFloat32: {
+#if HIFI_VFPU && (defined(HIFI3) || defined(HIFI4) || defined(HIFI5))
+      DepthwiseConvEvalFloat32Hifi(context, node, params, op_data, input,
+                                &filter_int8, bias, output);
+#else       
+      TFLITE_DCHECK(node->builtin_data != nullptr);
+      const OpDataConv& data = *(static_cast<const OpDataConv*>(node->user_data));
+      tflite::reference_ops::DepthwiseConv(
+          DepthwiseConvParamsFloat(params, data),
+          tflite::micro::GetTensorShape(input),
+          tflite::micro::GetTensorData<float>(input),
+          tflite::micro::GetTensorShape(filter),
+          tflite::micro::GetTensorData<float>(filter),
+          tflite::micro::GetTensorShape(bias),
+          tflite::micro::GetOptionalTensorData<float>(bias),
+          tflite::micro::GetTensorShape(output),
+          tflite::micro::GetTensorData<float>(output));
+#endif          
+      break;      
+    }
     default:
       MicroPrintf("Type %s (%d) not supported.", TfLiteTypeGetName(input->type),
                   input->type);
