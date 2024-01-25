@@ -107,6 +107,12 @@ inline TFLMRegistration Register_FULLY_CONNECTED_INT16() {
 
 #endif
 
+#if defined(XTENSA)
+
+TFLMRegistration Register_FULLY_CONNECTED_FLOAT32();
+
+#endif
+
 }  // namespace tflite
 
 #endif  // TENSORFLOW_LITE_MICRO_KERNELS_FULLY_CONNECTED_H_
