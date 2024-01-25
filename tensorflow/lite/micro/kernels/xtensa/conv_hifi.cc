@@ -639,7 +639,7 @@ TfLiteStatus ConvEvalHifiFloat32(TfLiteContext* context, TfLiteNode* node,
       p_out_temp = &output_data[batch * out_length];
 
       {
-        if(filter_depth == input_depth){
+        if((filter_depth == input_depth) && ((params.dilation_width_factor == 1) && (params.dilation_height_factor == 1))){
         TF_LITE_ENSURE_EQ(
             context,
             xa_nn_conv2d_std_f32(
