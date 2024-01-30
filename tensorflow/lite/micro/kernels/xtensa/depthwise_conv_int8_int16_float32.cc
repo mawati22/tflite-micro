@@ -105,10 +105,9 @@ TFLMRegistration Register_DEPTHWISE_CONV_2D_INT16() {
                                    EvalInt16);
 }
 
-#if HIFI_VFPU
 TFLMRegistration Register_DEPTHWISE_CONV_2D_FLOAT32() {
   return tflite::micro::RegisterOp(DepthwiseConvInitXtensa, DepthwiseConvPrepareXtensa,
                                    EvalFloat32);
 }
-#endif
+
 }  // namespace tflite

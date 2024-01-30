@@ -68,29 +68,15 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 #if defined(HIFI5) && defined(NNLIB_HIFI5)
           ConvEvalHifiInt4(context, node, params, op_data, input, filter,
                        bias, output);
-#else // defined(HIFI5) && defined(NNLIB_HIFI5)   
+#elif defined(HIFI4)
           TfLiteEvalTensor filter_int8 = tflite::micro::MakeUnpackedInt4Tensor(
               context, op_data.reference_op_data.filter_buffer_index, filter);
-#if defined(HIFI4)
           ConvEvalHifiInt8(context, node, params, op_data, input, &filter_int8,
                            bias, output);
 #else
-          reference_integer_ops::ConvPerChannel(
-              ConvParamsQuantized(params, op_data.reference_op_data),
-              op_data.reference_op_data.per_channel_output_multiplier,
-              op_data.reference_op_data.per_channel_output_shift,
-              tflite::micro::GetTensorShape(input),
-              tflite::micro::GetTensorData<int8_t>(input),
-              tflite::micro::GetTensorShape(filter),
-              tflite::micro::GetTensorData<int8_t>(&filter_int8),
-              tflite::micro::GetTensorShape(bias),
-              tflite::micro::GetOptionalTensorData<int32_t>(bias),
-              tflite::micro::GetTensorShape(output),
-              tflite::micro::GetTensorData<int8_t>(output));
-          return kTfLiteOk;
-#endif // defined(HIFI4)     
-#endif // defined(HIFI5) && defined(NNLIB_HIFI5)   
-          break;
+          return ConvReferenceEvalInt8(context, node);
+#endif        
+          break;  
         } 
         case kTfLiteInt8: {
 #if defined(HIFI4) || defined(HIFI5)

@@ -8,7 +8,6 @@ MICROLITE_CC_KERNEL_SRCS += \
   $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_hifi.cc \
   $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_int16_reference.cc \
   $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_float32_reference.cc \
-  $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_int8_int16.cc \
   $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_int8_int16_float32.cc \
   $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_int8_reference.cc \
   $(TENSORFLOW_ROOT)tensorflow/lite/micro/kernels/xtensa/conv_vision.cc \
