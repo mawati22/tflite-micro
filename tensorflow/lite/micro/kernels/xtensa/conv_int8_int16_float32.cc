@@ -42,14 +42,33 @@ TfLiteStatus EvalInt8(TfLiteContext* context, TfLiteNode* node) {
   const TfLiteEvalTensor* bias =
       tflite::micro::GetEvalInput(context, node, kConvBiasTensor);
 
-#if defined(HIFI3) || defined(HIFI4) || defined(HIFI5)
-  return ConvEvalHifiInt8(context, node, params, op_data, input, filter, bias,
-                          output);
-#elif defined(VISION_P6)
-  return ConvEvalVision(context, node, params, op_data, input, filter, bias,
+  switch (filter->type) {
+    case kTfLiteInt4: {
+    #if defined(HIFI5) && defined(NNLIB_HIFI5)
+        return ConvEvalHifiInt4(context, node, params, op_data, input, filter,
+                    bias, output);
+    #elif defined(HIFI4)
+        TfLiteEvalTensor filter_int8 = tflite::micro::MakeUnpackedInt4Tensor(
+            context, op_data.reference_op_data.filter_buffer_index, filter);
+        return ConvEvalHifiInt8(context, node, params, op_data, input, &filter_int8,
+                        bias, output);
+    #else
+        return ConvReferenceEvalInt8(context, node);
+    #endif        
+    }
+    case kTfLiteInt8: {
+    #if defined(HIFI3) || defined(HIFI4) || defined(HIFI5)
+        return ConvEvalHifiInt8(context, node, params, op_data, input, filter, bias,
                         output);
-#endif
-
+    #else
+        return ConvReferenceEvalInt8(context, node);                    
+    #endif
+    }
+    default:
+      MicroPrintf("Type %s (%d) not supported.", TfLiteTypeGetName(filter->type),
+                  filter->type);
+      return kTfLiteError;     
+  }
 #endif  // defined(HIFIMINI)
 }
 
@@ -68,8 +87,18 @@ TfLiteStatus EvalInt16(TfLiteContext* context, TfLiteNode* node) {
   const TfLiteEvalTensor* bias =
       tflite::micro::GetEvalInput(context, node, kConvBiasTensor);
 
-  return ConvEvalHifiInt16(context, node, params, op_data, input, filter, bias,
+  if(bias->type == kTfLiteInt64){
+    return ConvEvalHifiInt16(context, node, params, op_data, input, filter, bias,
                            output);
+  }
+  else if(bias->type == kTfLiteInt32){
+    return ConvReferenceEvalInt16(context, node);
+  }
+  else{
+    MicroPrintf("Bias type %s (%d) not supported.",
+                TfLiteTypeGetName(bias->type), bias->type);
+    return kTfLiteError;    
+  }
 #else
   return ConvReferenceEvalInt16(context, node);
 #endif
