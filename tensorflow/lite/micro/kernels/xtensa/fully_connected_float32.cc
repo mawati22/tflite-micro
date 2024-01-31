@@ -33,7 +33,7 @@ TfLiteStatus XtensaEvalFullyConnectedQuantizedFloat32(
     const TfLiteEvalTensor* input, const TfLiteEvalTensor* filter,
     const TfLiteEvalTensor* bias, TfLiteEvalTensor* output) {
   
-#if HIFI_VFPU && (defined(HIFI4) || defined(HIFI5))
+#if defined(INCLUDE_FLOAT_OPT) && (defined(HIFI4) || defined(HIFI5))
   const float32_t* bias_data =
       nullptr != bias ? tflite::micro::GetTensorData<float32_t>(bias) : nullptr;
   const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);

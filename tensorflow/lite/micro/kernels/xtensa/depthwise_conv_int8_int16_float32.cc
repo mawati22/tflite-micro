@@ -73,7 +73,7 @@ TfLiteStatus EvalInt16(TfLiteContext* context, TfLiteNode* node) {
 }
 
 TfLiteStatus EvalFloat32(TfLiteContext* context, TfLiteNode* node) {
-#if HIFI_VFPU && (defined(HIFI3) || defined(HIFI4) || defined(HIFI5))
+#if defined(INCLUDE_FLOAT_OPT) && (defined(HIFI3) || defined(HIFI4) || defined(HIFI5))
   const auto& op_data = *(reinterpret_cast<XtensaDepthwiseConvOpData*>(node->user_data));
   const auto& params =
       *(reinterpret_cast<TfLiteDepthwiseConvParams*>(node->builtin_data));

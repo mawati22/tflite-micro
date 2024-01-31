@@ -139,7 +139,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       break;
     }
     case kTfLiteFloat32: {
-#if HIFI_VFPU && (defined(HIFI3) || defined(HIFI4) || defined(HIFI5))
+#if defined(INCLUDE_FLOAT_OPT) && (defined(HIFI3) || defined(HIFI4) || defined(HIFI5))
       DepthwiseConvEvalFloat32Hifi(context, node, params, op_data, input,
                                 &filter_int8, bias, output);
 #else       

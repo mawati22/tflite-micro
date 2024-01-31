@@ -54,7 +54,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
 
   switch (input->type) {
     case kTfLiteFloat32: {
-#if HIFI_VFPU
+#if defined(INCLUDE_FLOAT_OPT)
       ConvEvalHifiFloat32(context, node, params, op_data, input, filter,
                    bias, output);
 #else    

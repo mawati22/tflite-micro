@@ -124,7 +124,7 @@ TfLiteStatus ConvPrepareHifi(TfLiteContext* context, TfLiteNode* node) {
       }
       TF_LITE_ENSURE(context, required_scratch > 0);
     }
-#if HIFI_VFPU    
+#if defined(INCLUDE_FLOAT_OPT)    
      if ((input->type == kTfLiteFloat32) && (input_depth == filter_depth)) {
         required_scratch = xa_nn_conv2d_std_getsize(
             input_height, input_width, input_depth, filter_height, filter_width, filter_depth, stride_height,
@@ -580,7 +580,7 @@ TfLiteStatus ConvEvalHifiInt4(TfLiteContext* context, TfLiteNode* node,
 }
 #endif // #if defined(HIFI5) && defined(NNLIB_HIFI5)
 
-#if HIFI_VFPU
+#if defined(INCLUDE_FLOAT_OPT)
 
 TfLiteStatus ConvEvalHifiFloat32(TfLiteContext* context, TfLiteNode* node,
                                const TfLiteConvParams& params,
