@@ -76,12 +76,12 @@ inline TFLMRegistration Register_DEPTHWISE_CONV_2D_INT16() {
 #endif
 
 #if defined(XTENSA)
-
 TFLMRegistration Register_DEPTHWISE_CONV_2D_FLOAT32();
+#endif
+
 TFLMRegistration Register_DEPTHWISE_CONV_2D_INT8REF();
 TFLMRegistration Register_DEPTHWISE_CONV_2D_INT16REF();
 TFLMRegistration Register_DEPTHWISE_CONV_2D_FLOAT32REF();
-#endif
 
 }  // namespace tflite
 

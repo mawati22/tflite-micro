@@ -58,7 +58,7 @@ TfLiteStatus DepthwiseConvEvalInt16Hifi(TfLiteContext* context, TfLiteNode* node
                                    const TfLiteEvalTensor* bias,
                                    TfLiteEvalTensor* output);
 
-#if HIFI_VFPU
+#if defined(INCLUDE_FLOAT_OPT)
 TfLiteStatus DepthwiseConvEvalFloat32Hifi(TfLiteContext* context, TfLiteNode* node,
                                    const TfLiteDepthwiseConvParams& params,
                                    const XtensaDepthwiseConvOpData& data,
