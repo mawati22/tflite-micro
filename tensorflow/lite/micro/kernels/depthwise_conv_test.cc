@@ -183,11 +183,6 @@ void TestDepthwiseConvQuantizedPerChannel(
       output_scale, output_zero_point, conv_params, filter_packed_type);
 }
 
-// Xtensa kernels do not support float activations., and the corresponding tests
-// are disabled. As a result, helper functions that are only needed for float
-// kernel tests also need to be ifdef'd out to avoid build errors due to unused
-// functions.
-#if !defined(XTENSA)
 void TestDepthwiseConvFloat(int* input_dims_data, const float* input_data,
                             int* filter_dims_data, const float* filter_data,
                             int* bias_dims_data, const float* bias_data,
@@ -215,17 +210,13 @@ void TestDepthwiseConvFloat(int* input_dims_data, const float* input_data,
                                conv_params, 1e-5, tensors_size, tensors);
 }
 
-#endif  // !defined(XTENSA)
-
 }  // namespace
 }  // namespace testing
 }  // namespace tflite
 
 TF_LITE_MICRO_TESTS_BEGIN
 
-#if !defined(XTENSA)  // TODO(b/170322965): xtensa kernels are less general than
-                      // reference kernels and we ifdef out test cases that are
-                      // currently known to fail.
+
 TF_LITE_MICRO_TEST(SimpleTest) {
   int input_shape[] = {4, 1, 3, 2, 2};
   const float input_values[] = {1, 2, 7, 8, 3, 4, 9, 10, 5, 6, 11, 12};
@@ -253,6 +244,7 @@ TF_LITE_MICRO_TEST(SimpleTest) {
       bias_values, golden, output_shape, &conv_params, output_data);
 }
 
+#if !defined(XTENSA)
 TF_LITE_MICRO_TEST(SimpleTestRelu) {
   int input_shape[] = {4, 1, 3, 2, 2};
   const float input_values[] = {1, 2, 7, 8, 3, 4, 9, 10, 5, 6, 11, 12};

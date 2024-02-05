@@ -86,6 +86,15 @@ TfLiteStatus DepthwiseConvPrepareHifi(TfLiteContext* context,
             output_height, output_width, PREC_SYM16S, 0 /* NHWC */);
         TF_LITE_ENSURE(context, required_scratch > 0);            
         }
+#if defined(INCLUDE_FLOAT_OPT)
+        else if(input->type == kTfLiteFloat32){
+        required_scratch = xa_nn_conv2d_depthwise_getsize(
+            input_height, input_width, input_depth, filter_height, filter_width,
+            depth_multiplier, stride_width, stride_height, pad_width, pad_height,
+            output_height, output_width, PREC_F32, 0 /* NHWC */);
+        TF_LITE_ENSURE(context, required_scratch > 0);            
+        }
+#endif       
   }
   else{
     int dilation_height = params.dilation_height_factor;
@@ -96,7 +105,16 @@ TfLiteStatus DepthwiseConvPrepareHifi(TfLiteContext* context,
       depth_multiplier, dilation_height, dilation_width, stride_width, stride_height, pad_width, pad_height,
       output_height, output_width, PREC_ASYM8S, 0 /* NHWC */);
       TF_LITE_ENSURE(context, required_scratch > 0);        
-    }   
+    }  
+#if defined(INCLUDE_FLOAT_OPT)
+        else if(input->type == kTfLiteFloat32){
+            required_scratch = xa_nn_dilated_conv2d_depthwise_getsize(
+            input_height, input_width, input_depth, filter_height, filter_width,
+            depth_multiplier, dilation_height, dilation_width, stride_width, stride_height, pad_width, pad_height,
+            output_height, output_width, PREC_F32, 0 /* NHWC */);
+            TF_LITE_ENSURE(context, required_scratch > 0);           
+        }
+#endif         
   }
   TF_LITE_ENSURE_OK(
       context, context->RequestScratchBufferInArena(
@@ -359,6 +377,128 @@ TfLiteStatus DepthwiseConvEvalInt16Hifi(TfLiteContext* context, TfLiteNode* node
     return kTfLiteOk;
   }
 }
+
+#if defined(INCLUDE_FLOAT_OPT)
+TfLiteStatus DepthwiseConvEvalFloat32Hifi(TfLiteContext* context, TfLiteNode* node,
+                                   const TfLiteDepthwiseConvParams& params,
+                                   const XtensaDepthwiseConvOpData& data,
+                                   const TfLiteEvalTensor* input,
+                                   const TfLiteEvalTensor* filter,
+                                   const TfLiteEvalTensor* bias,
+                                   TfLiteEvalTensor* output) {
+  // If dilation is not required use the optimized NN Library kernel.
+  // Otherwise call the reference implementation.
+  if ((params.dilation_width_factor == 1) &&
+      (params.dilation_height_factor == 1)) {
+    const int stride_width = params.stride_width;
+    const int stride_height = params.stride_height;
+    const int pad_width = data.reference_op_data.padding.width;
+    const int pad_height = data.reference_op_data.padding.height;
+    const int depth_multiplier = params.depth_multiplier;
+
+    const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
+    const RuntimeShape& filter_shape = tflite::micro::GetTensorShape(filter);
+    const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
+    const RuntimeShape& bias_shape = tflite::micro::GetTensorShape(bias);
+    TFLITE_DCHECK_EQ(input_shape.DimensionsCount(), 4);
+    TFLITE_DCHECK_EQ(filter_shape.DimensionsCount(), 4);
+    TFLITE_DCHECK_EQ(output_shape.DimensionsCount(), 4);
+
+    const int batches = MatchingDim(input_shape, 0, output_shape, 0);
+    const int output_depth = MatchingDim(filter_shape, 3, output_shape, 3);
+    const int input_height = input_shape.Dims(1);
+    const int input_width = input_shape.Dims(2);
+    const int input_depth = input_shape.Dims(3);
+    const int filter_height = filter_shape.Dims(1);
+    const int filter_width = filter_shape.Dims(2);
+    const int output_height = output_shape.Dims(1);
+    const int output_width = output_shape.Dims(2);
+    TFLITE_DCHECK_EQ(output_depth, input_depth * depth_multiplier);
+    TFLITE_DCHECK_EQ(bias_shape.FlatSize(), output_depth);
+
+    const float32_t* input_data = tflite::micro::GetTensorData<float32_t>(input);
+    const float32_t* filter_data = tflite::micro::GetTensorData<float32_t>(filter);
+    const float32_t* bias_data = tflite::micro::GetTensorData<float32_t>(bias);
+    float32_t* output_data = tflite::micro::GetTensorData<float32_t>(output);
+
+    int32_t input_data_format = 0;
+    int32_t output_data_format = 0;
+
+    void* p_scratch = static_cast<void*>(
+        context->GetScratchBuffer(context, data.scratch_tensor_index));
+
+    for (int i = 0; i < batches; i++) {
+      TF_LITE_ENSURE_EQ(
+          context,
+          xa_nn_conv2d_depthwise_f32(
+              &output_data[i * output_height * output_width * output_depth],
+              filter_data,
+              &input_data[i * input_height * input_width * input_depth],
+              bias_data, input_height, input_width, input_depth, filter_height,
+              filter_width, depth_multiplier, stride_width, stride_height,
+              pad_width, pad_height, output_height, output_width, input_data_format,
+              output_data_format, p_scratch),
+          0);
+    }
+    return kTfLiteOk;
+  }
+  else{
+    const int stride_width = params.stride_width;
+    const int stride_height = params.stride_height;
+    const int pad_width = data.reference_op_data.padding.width;
+    const int pad_height = data.reference_op_data.padding.height;
+    const int depth_multiplier = params.depth_multiplier;
+    const int dilated_width = params.dilation_width_factor;
+    const int dilated_height = params.dilation_height_factor;    
+
+    const RuntimeShape& input_shape = tflite::micro::GetTensorShape(input);
+    const RuntimeShape& filter_shape = tflite::micro::GetTensorShape(filter);
+    const RuntimeShape& output_shape = tflite::micro::GetTensorShape(output);
+    const RuntimeShape& bias_shape = tflite::micro::GetTensorShape(bias);
+    TFLITE_DCHECK_EQ(input_shape.DimensionsCount(), 4);
+    TFLITE_DCHECK_EQ(filter_shape.DimensionsCount(), 4);
+    TFLITE_DCHECK_EQ(output_shape.DimensionsCount(), 4);
+
+    const int batches = MatchingDim(input_shape, 0, output_shape, 0);
+    const int output_depth = MatchingDim(filter_shape, 3, output_shape, 3);
+    const int input_height = input_shape.Dims(1);
+    const int input_width = input_shape.Dims(2);
+    const int input_depth = input_shape.Dims(3);
+    const int filter_height = filter_shape.Dims(1);
+    const int filter_width = filter_shape.Dims(2);
+    const int output_height = output_shape.Dims(1);
+    const int output_width = output_shape.Dims(2);
+    TFLITE_DCHECK_EQ(output_depth, input_depth * depth_multiplier);
+    TFLITE_DCHECK_EQ(bias_shape.FlatSize(), output_depth);
+
+    const float32_t* input_data = tflite::micro::GetTensorData<float32_t>(input);
+    const float32_t* filter_data = tflite::micro::GetTensorData<float32_t>(filter);
+    const float32_t* bias_data = tflite::micro::GetTensorData<float32_t>(bias);
+    float32_t* output_data = tflite::micro::GetTensorData<float32_t>(output);
+
+    int32_t input_data_format = 0;
+    int32_t output_data_format = 0;
+
+    void* p_scratch = static_cast<void*>(
+        context->GetScratchBuffer(context, data.scratch_tensor_index));
+
+    for (int i = 0; i < batches; i++) {
+      TF_LITE_ENSURE_EQ(
+          context,
+          xa_nn_dilated_conv2d_depthwise_f32(
+              &output_data[i * output_height * output_width * output_depth],
+              filter_data,
+              &input_data[i * input_height * input_width * input_depth],
+              bias_data, input_height, input_width, input_depth, filter_height,
+              filter_width, depth_multiplier, dilated_height, dilated_width, stride_width, stride_height,
+              pad_width, pad_height, output_height, output_width, input_data_format,
+              output_data_format, p_scratch),
+          0);
+    }
+    return kTfLiteOk;     
+  }
+}
+#endif
 
 }  // namespace tflite
 #endif  // defined(HIFI3) ||defined(HIFI4) || defined(HIFI5)
